@@ -1,0 +1,20 @@
+__app_name__ = "mimicbot"
+__version__ = "0.0.1"
+
+(
+  SUCCESS,
+  DIR_ERROR,
+  FILE_ERROR,
+  API_KEY_ERROR,
+  PRIVILAGES_ERROR,
+  BOT_ERROR,
+) = range(6)
+
+ERROR = {
+  SUCCESS: "SUCCESS",
+  DIR_ERROR: "DIR_ERROR",
+  FILE_ERROR: "FILE_ERROR",
+  API_KEY_ERROR: "API_KEY_ERROR",
+  PRIVILAGES_ERROR: "PRIVILAGES_ERROR",
+  BOT_ERROR: "BOT_ERROR",
+}

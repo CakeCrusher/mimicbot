@@ -1,0 +1,68 @@
+encoder
+  takes in sentence and transforms it into a feature tensor/vector
+  takes into account words around it
+  good for
+    masked language models
+    sequence classification
+  models
+    bert
+    roberta
+    albert
+decoder
+  converts input into a feature tensor/vector
+  takes into account only the word and the previous words
+  models
+    gpt2
+  good for
+    causal language modeling
+sequence to sequence
+  encoder provides meaning
+  decoder produces text
+  good for
+    translation
+    summarization
+  can be a mix of encoder and decoder models
+  models
+    mt5
+    bart
+    prophetNet
+
+timeline
+  RNN model using scrappy techniques (published 2021)
+    https://towardsdatascience.com/create-your-own-artificial-shakespeare-in-10-minutes-with-natural-language-processing-1fde5edc8f28
+  developed a conversations mining bot to extract conversations in a discord server
+  could not use the bot for DMs so had to use a risky open source software for it
+    https://github.com/Tyrrrz/DiscordChatExporter
+  read up on what task chatting may beling in
+    https://cobusgreyling.medium.com/how-to-use-huggingface-in-your-chatbot-216ecc9a2170
+  came across an article for deploying on aws
+    https://towardsdatascience.com/deploy-chatbots-in-web-sites-using-hugging-face-dlcs-be59a86fd7ba
+  found the task: conversational
+  found an article handling the same challenge
+    https://www.freecodecamp.org/news/discord-ai-chatbot/
+  cleaned the content from any unfamiliar text
+    took a bit longer than expected
+    the original reddit dataset did not contain any urls, emojis, or special patterns/symbols
+  https://colab.research.google.com/drive/15wa925dj7jvdvrz8_z3vU7btqAFQLVlG#scrollTo=CjZaN5ilgd-z
+    provided a guide for pretraining the model
+  Seq2Seq pipeline was not suitable for the Dialo model
+  Could not build the bot with only huggingface had to turn to the following guide
+    https://colab.research.google.com/drive/15wa925dj7jvdvrz8_z3vU7btqAFQLVlG#scrollTo=CjZaN5ilgd-z
+  After hours of training on colab I had only a few minutes remaining before my runtime disconnected and lost all my progress
+    lesson: make sure your model is saved throught the process
+  The way the data was split into train test was dynamic and not static
+  created a manual pipeline that flows without issues
+    still need to improve and standardize the inputs before automating it
+  the .ipynb files display all the output data on git, therefore I have to restart git
+  learned to develop cli with config to then implement
+  need to restructure code to work as a singular bot
+    begin by directing user to create config file
+      discord bot API key
+      discord guild name
+      discord user to mimic
+      huggingface API key
+      model name
+      amt of context
+  create tests and raise errors for mine_data
+  clean data
+  train

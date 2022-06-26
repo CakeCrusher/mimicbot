@@ -1,0 +1,6 @@
+.env
+cached
+env
+err.log
+__pycache__
+.pytest_cache
