@@ -1,11 +1,15 @@
 import os
+import pdb
 import discord
 import pandas as pd
 from pathlib import Path
 from configparser import ConfigParser
 from typing import Tuple
+import typer
 
-from mimicbot import SUCCESS # pylint: disable=[import-error]
+from mimicbot import ( # pylint: disable=[import-error]
+    SUCCESS, UNKNOWN_ERROR, API_KEY_ERROR, MISSING_GUILD_ERROR, ABORT
+) 
 
 
 
@@ -14,20 +18,28 @@ def data_mine(config_path: Path) -> Tuple[Path, int]:
     config.read(str(config_path))
     GUILD = config.get("discord", "guild")
     SESSION_NAME = config.get("general", "session")
+    DISCORD_API_KEY = config.get("discord", "api_key")
     app_path = config_path.parent
     GUILD_DATA_PATH = app_path / "data" / GUILD / SESSION_NAME
-    print("Starting DataMiner")
+    # print("Starting DataMiner")
 
     intents = discord.Intents.default()
     # read messaging intent
     intents.messages = True # pylint: disable=[assigning-non-slot]
     intents.members = True # pylint: disable=[assigning-non-slot]
     client = discord.Client(intents=intents)
+    client.result = None
+    client.finished_mining = False
 
     @client.event
     async def on_ready():
         CHANNELS_TO_MINE = []  # leave empty to mine all text channels
         guild = discord.utils.get(client.guilds, name=GUILD)
+        if not guild:
+            typer.secho("Guild not found", fg="red")
+            # update global result
+            client.result = (Path(""), MISSING_GUILD_ERROR)
+            await client.close()
         print(f'{client.user} has connected to Discord!')
         if len(CHANNELS_TO_MINE) == 0:
             CHANNELS_TO_MINE = [
@@ -74,14 +86,23 @@ def data_mine(config_path: Path) -> Tuple[Path, int]:
         members_data = [[member.id, member.name] for member in guild.members]
         messages_df = pd.DataFrame(columns=members_columns, data=members_data)
         messages_df.to_csv(str(GUILD_DATA_PATH / "members.csv"), index=False)
+        client.finished_mining = True
         await client.close()
 
         @client.event
         async def on_error(event, *args, **kwargs):
-            print(f'Error on: {event}')
-            with open('err.log', 'a') as f:
-                f.write(f'Error on: {event}\n')
+            client.result = (Path(""), UNKNOWN_ERROR)
+            await client.close()
 
-    client.run(config.get("discord", "api_key"))
-
-    return (GUILD_DATA_PATH, SUCCESS)
+    try:
+        client.run(DISCORD_API_KEY)
+    except discord.LoginFailure:
+        client.result = (Path(""), API_KEY_ERROR)
+    
+    if client.finished_mining:
+        client.result = (GUILD_DATA_PATH, SUCCESS)
+    else:
+        if not client.result:
+            client.result = (Path(""), ABORT)
+    
+    return client.result

@@ -4,13 +4,40 @@ import pytest
 from mimicbot import (
     __app_name__,
     cli,
+    utils,
 )
 import typer
-from typer.testing import CliRunner
+from typer.testing import CliRunner, Result
 from configparser import ConfigParser
 
 runner = CliRunner()
 
+def file_success_assertions(
+    result: Result,
+    config_path: Path,
+    # session can be a bool or a string
+    session: str or bool,
+    discord_api_key: str,
+    huggingface_api_key: str,
+):
+    assert "Successfully initialized mimicbot." in result.stdout
+
+    assert config_path.exists()
+
+    config = ConfigParser()
+    config.read(str(config_path))
+
+    assert config.has_section("general")
+    if session:
+        assert config.get("general", "session") == session
+    else:
+        assert config.get("general", "session") == str(utils.datetime_str())
+
+    assert config.has_section("discord")
+    assert config.get("discord", "api_key") == discord_api_key
+
+    assert config.has_section("huggingface")
+    assert config.get("huggingface", "api_key") == huggingface_api_key
 
 @pytest.mark.parametrize(
     "session, app_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key",
@@ -40,8 +67,19 @@ class TestInit:
         assert f"Path to store mimicbot data [{str(Path(typer.get_app_dir(__app_name__)))}]" in result.stdout
         assert "Aborted!" in result.stdout
 
-
     def test_create_file(self, tmp_path, session, app_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key):
+        app_path = tmp_path / "mimicbot"
+        config_path = app_path / "config.ini"
+
+        result = runner.invoke(
+            cli.app, ["init"],
+            input=f"{str(app_path)}\n{discord_api_key}\n{discord_guild}\n{discord_target_user}\n{huggingface_api_key}\n"
+        )
+
+        file_success_assertions(result, config_path,
+                                False, discord_api_key, huggingface_api_key)
+
+    def test_create_file_forced(self, tmp_path, session, app_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key):
         app_path = tmp_path / "mimicbot"
         config_path = app_path / "config.ini"
 
@@ -56,18 +94,6 @@ class TestInit:
                 "--huggingface-api-key", huggingface_api_key
             ]
         )
-        assert "Successfully initialized mimicbot." in result.stdout
 
-        assert config_path.exists()
-
-        config = ConfigParser()
-        config.read(str(config_path))
-
-        assert config.has_section("general")
-        assert config.get("general", "session") == session
-
-        assert config.has_section("discord")
-        assert config.get("discord", "api_key") == discord_api_key
-
-        assert config.has_section("huggingface")
-        assert config.get("huggingface", "api_key") == huggingface_api_key
+        file_success_assertions(result, config_path,
+                                session, discord_api_key, huggingface_api_key)

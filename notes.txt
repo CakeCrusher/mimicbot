@@ -64,5 +64,11 @@ timeline
       model name
       amt of context
   create tests and raise errors for mine_data
+    adding more init tests
+    create mine tests and raise errors
+  need to deal with huggingface api key
+    use official cli
+  set up the default init path to guide to config path
+    if default init is config then simply add it to [general]
   clean data
   train

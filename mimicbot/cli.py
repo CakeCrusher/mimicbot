@@ -10,25 +10,18 @@ from mimicbot import (
     utils,
     data_preprocessing,
 )
-import datetime
 from configparser import ConfigParser
 
 from mimicbot.bot.mine import data_mine
 from pathlib import Path
 
 app = typer.Typer()
-# create a datetime string in the format of YYYY-MM-DD-HH-MM
-
-
-def datetime_str():
-
-    return datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
 
 
 @app.command()
 def init(
     session: str = typer.Option(
-        str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")),
+        str(utils.datetime_str()),
         "--session",
         "-s",
         help="Session name for organization of data",
@@ -84,7 +77,7 @@ def init(
 @app.command(name="session")
 def set_session(
     session_name: str = typer.Option(
-        str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")),
+        str(utils.datetime_str()),
         "--session",
         "-s",
         help="Session name for organization of data",
@@ -119,11 +112,9 @@ def mine(
     data_path, error = data_mine(app_path / "config.ini")
     if error:
         typer.secho(f"Error: {ERROR[error]}", fg=typer.colors.RED)
-        raise typer.Exit(error)
+        raise typer.Exit(1)
 
     typer.secho(
         f"\nSuccessfully mined data. You can find it here [{str(data_path)}]",
         fg=typer.colors.GREEN
     )
-
-    #
