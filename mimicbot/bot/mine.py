@@ -79,7 +79,7 @@ def data_mine(config_path: Path) -> Tuple[Path, int]:
         messages_df = pd.DataFrame(
             columns=messages_columns, data=messages_data)
         print(messages_df.info())
-        messages_df.to_csv(str(GUILD_DATA_PATH / "messages.csv"), index=False)
+        messages_df.to_csv(str(GUILD_DATA_PATH / "raw_messages.csv"), index=False)
 
         # create members reference file
         members_columns = ["id", "name"]

@@ -69,3 +69,16 @@ def huggingface_config(app_path: Path, api_key: str):
     config.set("huggingface", "api_key", api_key)
     with open(str(app_path / "config.ini"), "w") as config_file:
         config.write(config_file)
+
+
+def training_config(app_path: Path, context_length: str, test_perc: str):
+    config = configparser.ConfigParser()
+    try:
+        config.read(str(app_path / "config.ini"))
+    except:
+        pass
+    config.add_section("training")
+    config.set("training", "context_length", context_length)
+    config.set("training", "test_perc", test_perc)
+    with open(str(app_path / "config.ini"), "w") as config_file:
+        config.write(config_file)

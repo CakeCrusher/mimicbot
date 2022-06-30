@@ -30,7 +30,7 @@ class TestMine:
         result = runner.invoke(cli.app, ["mine", "-ap", tmp_path])
 
         data_path = tmp_path / "data" / parsed_config.get("discord", "guild") / parsed_config.get("general", "session")
-        messages_path = data_path / "messages.csv"
+        messages_path = data_path / "raw_messages.csv"
 
         assert "Successfully mined data." in result.stdout
         assert result.exit_code == 0

@@ -1,11 +1,21 @@
 import re
 from configparser import ConfigParser
 import pandas as pd
+from pathlib import Path
+import os
+# from tqdm.auto import tqdm
+import typer
+
+from mimicbot import (SUCCESS, DIR_ERROR, USER_NAME_ERROR)
 
 
-def clean_df(raw_messages_data: pd.DataFrame, members_df: pd.DataFrame) -> pd.DataFrame:
-    config = ConfigParser()
-    GUILD = config.get("discord", "guild")
+def clean_messages(data_path: Path) -> Path:
+    raw_messages_data = pd.read_csv(data_path / "raw_messages.csv")
+    members_df = pd.read_csv(data_path / "members.csv")
+
+    if not data_path.exists():
+        return (Path(""), DIR_ERROR)
+
     # replace na rows with empty strings
     raw_messages_data["content"] = raw_messages_data["content"].apply(
         lambda x:
@@ -44,14 +54,17 @@ def clean_df(raw_messages_data: pd.DataFrame, members_df: pd.DataFrame) -> pd.Da
         replace_all_emoji_tokens)
     raw_messages_data.head(3)
 
-    # create regex that begins with <@ and ends with >
+    # replace user mentions with their names
     user_regex = r'<@[0-9]+>'
 
     def replace_user_token(text):
         span = re.search(user_regex, text).span()
         user_id = text[span[0]+2:span[1]-1]
-        user_name = members_df[members_df["id"]
-                               == int(user_id)]["name"].iloc[0]
+        try:
+            user_name = members_df[members_df["id"]
+                                   == int(user_id)]["name"].iloc[0]
+        except IndexError:
+            user_name = "Human"
         return text[:span[0]] + user_name + text[span[1]:]
 
     def replace_all_user_tokens(text):
@@ -84,66 +97,66 @@ def clean_df(raw_messages_data: pd.DataFrame, members_df: pd.DataFrame) -> pd.Da
             [ordered_df, channel_messages], ignore_index=True)
     raw_messages_data = ordered_df
 
-    return raw_messages_data
+    # save data
+    raw_messages_data.to_csv(data_path / "cleaned_messages.csv", index=False)
+
+    return (data_path / "cleaned_messages.csv", SUCCESS)
 
 
-def package_and_save_df():
-    GUILD = os.getenv("GUILD")
-    SESSION_NAME = os.getenv("SESSION_NAME")
-    AUTHOR_ID = os.getenv("AUTHOR_ID")
-    AMT_OF_CONTEXT = os.getenv("AMT_OF_CONTEXT")
-    cleanedMessages = pd.read_csv(
-        f"./data/{GUILD}/{SESSION_NAME}/cleanedMessages.csv")
+def package_data_for_training(cleaned_messages_path: Path) -> Path:
+    config = ConfigParser()
+    config.read(cleaned_messages_path.parent.parent.parent.parent / "config.ini")
 
-    cleanedMessages.info()
+    GUILD = config.get("discord", "guild")
+    SESSION_NAME = config.get("general", "session")
+    AUTHOR_NAME = config.get("discord", "target_user")
+    AMT_OF_CONTEXT = int(config.get("training", "context_length"))
+    TEST_PERC = float(config.get("training", "test_perc"))
+    cleaned_messages = pd.read_csv(cleaned_messages_path)
 
-    from tqdm.auto import tqdm
-    uniqueChannels = cleanedMessages["channel"].unique()
-    progress_bar = tqdm(range(len(cleanedMessages)-7*len(uniqueChannels)))
+    members_df = pd.read_csv(cleaned_messages_path.parent / "members.csv")
+    try:
+        AUTHOR_ID = members_df[members_df["name"] == AUTHOR_NAME]["id"].iloc[0]
+    except IndexError:
+        return (Path(""), USER_NAME_ERROR)
+    unique_channels = cleaned_messages["channel"].unique()
+    # progress_bar = tqdm(range(len(cleaned_messages)-7*len(unique_channels)))
 
-    responseAndContext = []
-    amtOfContext = int(AMT_OF_CONTEXT)
-    for channel in uniqueChannels:
-        channelMessages = cleanedMessages[cleanedMessages["channel"] == channel]
-        # reset index of channelMessages
-        channelMessages = channelMessages.reset_index(drop=True)
+    response_and_context = []
+    for channel in unique_channels:
+        channel_messages = cleaned_messages[cleaned_messages["channel"] == channel]
+        channel_messages = channel_messages.reset_index(drop=True)
         # iterate through each row of channelMessages
-        for index, row in channelMessages[7:].iterrows():
+        for index, row in channel_messages[AMT_OF_CONTEXT + 1:].iterrows():
             if row["author_id"] == int(AUTHOR_ID):
-                rowRaC = []
-                for i in range(index, index-amtOfContext-1, -1):
-                    rowRaC.append(channelMessages.iloc[i].content)
-                responseAndContext.append(rowRaC)
-            progress_bar.update(1)
-        # break
-    responseAndContext
+                row_response_and_context = []
+                for i in range(index, index-AMT_OF_CONTEXT-1, -1):
+                    row_response_and_context.append(
+                        channel_messages.iloc[i].content)
+                response_and_context.append(row_response_and_context)
+            # progress_bar.update(1)
 
-    responseAndContextColumns = ["response"] + \
-        ["context" + str(i+1) for i in range(amtOfContext)]
-    responseAndContextColumns
+    response_and_context_columns = ["response"] + \
+        ["context" + str(i+1) for i in range(AMT_OF_CONTEXT)]
 
-    messagesForModel = pd.DataFrame(
-        responseAndContext, columns=responseAndContextColumns)
-    messagesForModel
+    messages_for_model = pd.DataFrame(
+        response_and_context, columns=response_and_context_columns
+    )
 
     # shuffle and train test split
-    shuffledData = messagesForModel.sample(frac=1)
-    testPerc = 0.1
-    testSize = int(testPerc * len(shuffledData))
-    testData = shuffledData[:testSize]
-    trainData = shuffledData[testSize:]
+    shuffled_data = messages_for_model.sample(frac=1)
+    test_size = int(TEST_PERC * len(shuffled_data))
+    test_data = shuffled_data[:test_size]
+    train_data = shuffled_data[test_size:]
 
-    shuffledData.info()
-
-    # save
     # make directory if it does not exist
-    if not os.path.exists(f"./data/{GUILD}/{SESSION_NAME}/messagesData"):
-        os.makedirs(f"./data/{GUILD}/{SESSION_NAME}/messagesData")
-    trainData.to_csv(
-        f"./data/{GUILD}/{SESSION_NAME}/messagesData/train.csv", index=False)
-    testData.to_csv(
-        f"./data/{GUILD}/{SESSION_NAME}/messagesData/test.csv", index=False)
+    training_data_dir = cleaned_messages_path.parent / "training_data"
+    if not training_data_dir.exists():
+        training_data_dir.mkdir()
 
-    copyTestData = pd.read_csv(
-        f"./data/{GUILD}/{SESSION_NAME}/messagesData/test.csv")
-    copyTestData.info()
+    train_data.to_csv(
+        str(training_data_dir / "train.csv"), index=False)
+    test_data.to_csv(
+        str(training_data_dir / "test.csv"), index=False)
+
+    return (training_data_dir, SUCCESS)
