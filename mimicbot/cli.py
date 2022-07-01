@@ -72,23 +72,42 @@ def init(
     config.huggingface_config(app_path, huggingface_api_key)
 
     reccomended_settings = typer.confirm(
-        "Use reccommended training settings?", default=True)
+        "\nUse reccommended training settings?", default=True)
     if not reccomended_settings:
-        context_length = 0
-        while int(context_length) < 1:
-            context_length = typer.prompt(
-                "*must be greater than 1\nEnter the number of context words to use for training",
+        context_window = 0
+        extrapolate = typer.confirm(
+            "\n(the data will be expanded by creating squentially sensitive context combinations based on the context window)\nReccomended if less than 2,000 rows of training data.\nExtrapolate data?", default=True)
+        while int(context_window) < 1:
+            if extrapolate:
+                context_window_text = "(number of previous messages to use for context)\nEnter the size of the context messages window"
+            else:
+                context_window_text = "Enter the number of context messages to use for training"
+            context_window = typer.prompt(
+                f"\n*must be greater than 0\n{context_window_text}",
                 default=6,
             )
             try:
-                context_length = int(context_length)
+                context_window = int(context_window)
             except ValueError:
                 typer.secho("Invalid input. Please enter a number.",
                             fg=typer.colors.RED)
+        context_length: str or int = ""
+        if extrapolate:
+            context_length = 0
+            while int(context_length) < 1:
+                context_length = typer.prompt(
+                    "\n*must be greater than 0\nEnter the length of the context messages",
+                    default=2
+                )
+                try:
+                    context_length = int(context_length)
+                except ValueError:
+                    typer.secho("Invalid input. Please enter a number.",
+                                fg=typer.colors.RED)
         test_perc = 0
         while float(test_perc) <= 0 or float(test_perc) >= 1:
             test_perc = typer.prompt(
-                "*must be a decimal between 0 and 1\nEnter the percentage of data to use for testing",
+                "\n*must be a decimal between 0 and 1\nEnter the percentage of data to use for testing",
                 default=0.1,
             )
             try:
@@ -96,9 +115,10 @@ def init(
             except ValueError:
                 typer.secho("Invalid input. Please enter a number.",
                             fg=typer.colors.RED)
-        config.training_config(app_path, str(context_length), str(test_perc))
+        config.training_config(app_path, str(
+            context_window), str(context_length), str(test_perc))
     else:
-        config.training_config(app_path, "6", "0.1")
+        config.training_config(app_path, "6", "", "0.1")
 
     typer.secho("\nSuccessfully initialized mimicbot.", fg=typer.colors.GREEN)
 

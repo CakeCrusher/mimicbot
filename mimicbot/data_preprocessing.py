@@ -5,6 +5,7 @@ from pathlib import Path
 import os
 # from tqdm.auto import tqdm
 import typer
+import numpy as np
 
 from mimicbot import (SUCCESS, DIR_ERROR, USER_NAME_ERROR)
 
@@ -110,7 +111,7 @@ def package_data_for_training(cleaned_messages_path: Path) -> Path:
     GUILD = config.get("discord", "guild")
     SESSION_NAME = config.get("general", "session")
     AUTHOR_NAME = config.get("discord", "target_user")
-    AMT_OF_CONTEXT = int(config.get("training", "context_length"))
+    AMT_OF_CONTEXT = int(config.get("training", "context_window"))
     TEST_PERC = float(config.get("training", "test_perc"))
     cleaned_messages = pd.read_csv(cleaned_messages_path)
 
@@ -127,7 +128,7 @@ def package_data_for_training(cleaned_messages_path: Path) -> Path:
         channel_messages = cleaned_messages[cleaned_messages["channel"] == channel]
         channel_messages = channel_messages.reset_index(drop=True)
         # iterate through each row of channelMessages
-        for index, row in channel_messages[AMT_OF_CONTEXT + 1:].iterrows():
+        for index, row in channel_messages[AMT_OF_CONTEXT:].iterrows():
             if row["author_id"] == int(AUTHOR_ID):
                 row_response_and_context = []
                 for i in range(index, index-AMT_OF_CONTEXT-1, -1):
@@ -149,10 +150,31 @@ def package_data_for_training(cleaned_messages_path: Path) -> Path:
     test_data = shuffled_data[:test_size]
     train_data = shuffled_data[test_size:]
 
+    context_length = config.get("training", "context_length")
+    if context_length:
+        context_length = int(context_length)
+        response_and_context_windowed_columns = ["response"] + \
+            ["context" + str(i+1) for i in range(context_length)]
+        new_rows = []
+        for i, row in train_data.iterrows():
+            context = np.array(row[1:])
+            context_combos = []
+            get_combos(context_combos, context,
+                       AMT_OF_CONTEXT, 0, [], context_length)
+            # add row[1] to the beggining of each context_combo
+            for combo in context_combos:
+                combo.insert(0, row[0])
+            new_rows = new_rows + context_combos
+        train_data = pd.DataFrame(
+            new_rows, columns=response_and_context_windowed_columns)
+
     # make directory if it does not exist
     training_data_dir = cleaned_messages_path.parent / "training_data"
     if not training_data_dir.exists():
         training_data_dir.mkdir()
+
+    messages_for_model.to_csv(
+        str(training_data_dir.parent / "packaged_data.csv"), index=False)
 
     train_data.to_csv(
         str(training_data_dir / "train.csv"), index=False)
@@ -160,3 +182,23 @@ def package_data_for_training(cleaned_messages_path: Path) -> Path:
         str(training_data_dir / "test.csv"), index=False)
 
     return (training_data_dir, SUCCESS)
+
+
+def extrapolate_data():
+    data_path = Path(
+        "C:/Users/1seba/AppData/Roaming/mimicbot/data/TutorialServer/2022-06-29-23-58")
+    config = ConfigParser()
+    config.read(data_path.parent.parent.parent / "config.ini")
+    pd.read_csv(data_path / "raw_messages.csv")
+
+
+def get_combos(combos_ref: list, context: list, data_window: int, next_position: int, past_context: list, context_length: int):
+    for i in range(data_window-next_position):
+        new_context = context[i+next_position]
+        following_position = next_position + i + 1
+        updated_context = past_context + [new_context]
+        if len(updated_context) == context_length:
+            combos_ref.append(updated_context)
+        else:
+            get_combos(combos_ref, context, data_window,
+                       following_position, updated_context, context_length)

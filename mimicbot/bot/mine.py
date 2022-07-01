@@ -7,10 +7,9 @@ from configparser import ConfigParser
 from typing import Tuple
 import typer
 
-from mimicbot import ( # pylint: disable=[import-error]
+from mimicbot import (  # pylint: disable=[import-error]
     SUCCESS, UNKNOWN_ERROR, API_KEY_ERROR, MISSING_GUILD_ERROR, ABORT
-) 
-
+)
 
 
 def data_mine(config_path: Path) -> Tuple[Path, int]:
@@ -25,15 +24,15 @@ def data_mine(config_path: Path) -> Tuple[Path, int]:
 
     intents = discord.Intents.default()
     # read messaging intent
-    intents.messages = True # pylint: disable=[assigning-non-slot]
-    intents.members = True # pylint: disable=[assigning-non-slot]
+    intents.messages = True  # pylint: disable=[assigning-non-slot]
+    intents.members = True  # pylint: disable=[assigning-non-slot]
     client = discord.Client(intents=intents)
     client.result = None
     client.finished_mining = False
 
     @client.event
     async def on_ready():
-        CHANNELS_TO_MINE = []  # leave empty to mine all text channels
+        CHANNELS_TO_MINE = ["test"]  # leave empty to mine all text channels
         guild = discord.utils.get(client.guilds, name=GUILD)
         if not guild:
             typer.secho("Guild not found", fg="red")
@@ -79,7 +78,8 @@ def data_mine(config_path: Path) -> Tuple[Path, int]:
         messages_df = pd.DataFrame(
             columns=messages_columns, data=messages_data)
         print(messages_df.info())
-        messages_df.to_csv(str(GUILD_DATA_PATH / "raw_messages.csv"), index=False)
+        messages_df.to_csv(
+            str(GUILD_DATA_PATH / "raw_messages.csv"), index=False)
 
         # create members reference file
         members_columns = ["id", "name"]
@@ -98,11 +98,11 @@ def data_mine(config_path: Path) -> Tuple[Path, int]:
         client.run(DISCORD_API_KEY)
     except discord.LoginFailure:
         client.result = (Path(""), API_KEY_ERROR)
-    
+
     if client.finished_mining:
         client.result = (GUILD_DATA_PATH, SUCCESS)
     else:
         if not client.result:
             client.result = (Path(""), ABORT)
-    
+
     return client.result

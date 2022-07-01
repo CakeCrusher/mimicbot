@@ -71,5 +71,6 @@ timeline
   set up the default init path to guide to config path
     if default init is config then simply add it to [general]
   need to add a way to extrapolate data by randomizing context
+    added data extrapolation option
   clean data
   train
