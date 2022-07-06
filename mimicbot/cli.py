@@ -152,7 +152,8 @@ def set_session(
         config_parser.read(str(app_path / "config.ini"))
     except:
         pass
-    config.general_config(app_path, config_parser.get("general", "data_path"), session_name)
+    config.general_config(app_path, config_parser.get(
+        "general", "data_path"), session_name)
     typer.secho(
         f"\nSuccessfully set session name to {session_name}.", fg=typer.colors.GREEN)
 
@@ -178,6 +179,7 @@ def mine(
         f"\nSuccessfully mined data. You can find it here [{str(data_path)}]",
         fg=typer.colors.GREEN
     )
+
 
 @app.command(name="preprocess")
 def preprocess_data(
