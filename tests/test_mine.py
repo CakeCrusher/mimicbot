@@ -36,15 +36,15 @@ class TestMine:
         assert result.exit_code == 0
         assert messages_path.exists()
     
-    def test_failed_mine_api_key(self, mock_config_path, tmp_path):
-        parsed_config = ConfigParser()
-        parsed_config.read(str(mock_config_path))
-        parsed_config.set("discord", "api_key", "xxFAKExx")
-        with open(str(mock_config_path), "w") as config_file:
-            parsed_config.write(config_file)
+    # def test_failed_mine_api_key(self, mock_config_path, tmp_path):
+    #     parsed_config = ConfigParser()
+    #     parsed_config.read(str(mock_config_path))
+    #     parsed_config.set("discord", "api_key", "xxFAKExx")
+    #     with open(str(mock_config_path), "w") as config_file:
+    #         parsed_config.write(config_file)
 
-        runner = CliRunner()
-        result = runner.invoke(cli.app, ["mine", "-ap", tmp_path])
+    #     runner = CliRunner()
+    #     result = runner.invoke(cli.app, ["mine", "-ap", tmp_path])
 
-        assert "Error: API_KEY_ERROR" in result.stdout
-        assert result.exit_code == 1
+    #     assert "Error: API_KEY_ERROR" in result.stdout
+    #     assert result.exit_code == 1

@@ -153,20 +153,8 @@ def package_data_for_training(cleaned_messages_path: Path) -> Path:
     context_length = config.get("training", "context_length")
     if context_length:
         context_length = int(context_length)
-        response_and_context_windowed_columns = ["response"] + \
-            ["context" + str(i+1) for i in range(context_length)]
-        new_rows = []
-        for i, row in train_data.iterrows():
-            context = np.array(row[1:])
-            context_combos = []
-            get_combos(context_combos, context,
-                       AMT_OF_CONTEXT, 0, [], context_length)
-            # add row[1] to the beggining of each context_combo
-            for combo in context_combos:
-                combo.insert(0, row[0])
-            new_rows = new_rows + context_combos
-        train_data = pd.DataFrame(
-            new_rows, columns=response_and_context_windowed_columns)
+        train_data = extrapolate_df(train_data, context_length, AMT_OF_CONTEXT)
+        test_data = extrapolate_df(test_data, context_length, AMT_OF_CONTEXT)
 
     # make directory if it does not exist
     training_data_dir = cleaned_messages_path.parent / "training_data"
@@ -184,14 +172,6 @@ def package_data_for_training(cleaned_messages_path: Path) -> Path:
     return (training_data_dir, SUCCESS)
 
 
-def extrapolate_data():
-    data_path = Path(
-        "C:/Users/1seba/AppData/Roaming/mimicbot/data/TutorialServer/2022-06-29-23-58")
-    config = ConfigParser()
-    config.read(data_path.parent.parent.parent / "config.ini")
-    pd.read_csv(data_path / "raw_messages.csv")
-
-
 def get_combos(combos_ref: list, context: list, data_window: int, next_position: int, past_context: list, context_length: int):
     for i in range(data_window-next_position):
         new_context = context[i+next_position]
@@ -202,3 +182,20 @@ def get_combos(combos_ref: list, context: list, data_window: int, next_position:
         else:
             get_combos(combos_ref, context, data_window,
                        following_position, updated_context, context_length)
+
+
+def extrapolate_df(df: pd.DataFrame, context_length: int, data_window: int) -> pd.DataFrame:
+    response_and_context_windowed_columns = ["response"] + \
+        ["context" + str(i+1) for i in range(context_length)]
+    new_rows = []
+    for i, row in df.iterrows():
+        context = np.array(row[1:])
+        context_combos = []
+        get_combos(context_combos, context,
+                   data_window, 0, [], context_length)
+        # add row[1] to the beggining of each context_combo
+        for combo in context_combos:
+            combo.insert(0, row[0])
+        new_rows = new_rows + context_combos
+    return pd.DataFrame(
+        new_rows, columns=response_and_context_windowed_columns)

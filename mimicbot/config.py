@@ -32,7 +32,7 @@ def init_data(app_path: Path = APP_DIR_PATH):
         return DIR_ERROR
 
 
-def general_config(app_path: Path, session: str):
+def general_config(app_path: Path, data_path: Path, session: str):
     config = configparser.ConfigParser()
     try:
         config.read(str(app_path / "config.ini"))
@@ -40,6 +40,7 @@ def general_config(app_path: Path, session: str):
         pass
     if not config.has_section("general"):
         config.add_section("general")
+    config.set("general", "data_path", str(data_path))
     config.set("general", "session", session)
     with open(str(app_path / "config.ini"), "w") as config_file:
         config.write(config_file)

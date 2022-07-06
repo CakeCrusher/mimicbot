@@ -31,7 +31,7 @@ def app_path_verifier(app_path_str: str) -> None:
     if app_path.exists():
         typer.confirm(
             typer.style(
-                f"[{app_path_str}] already exists. Do you want to overwrite it?", fg=typer.colors.YELLOW),
+                f"\n[{app_path_str}] config already exists. Do you want to overwrite it?\n", fg=typer.colors.YELLOW),
             False,
             abort=True,
         )

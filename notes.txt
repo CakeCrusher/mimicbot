@@ -72,5 +72,10 @@ timeline
     if default init is config then simply add it to [general]
   need to add a way to extrapolate data by randomizing context
     added data extrapolation option
+    finished
+  added an option to extrapolate data
+  separated mine and preprocess
+  added preprocess tests & updated mine tests
+  updated cli init
   clean data
   train
