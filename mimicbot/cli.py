@@ -68,16 +68,30 @@ def init(
         "--huggingface-api-key",
         "-hak",
         prompt="\nGuide to retrieving huggingface API key: (https://youtube.com/)\nEnter your huggingface API key",
+        help="Huggingface's write key to upload models to your account.",
+    ),
+    huggingface_model_name: str = typer.Option(
+        None,
+        "--huggingface-model-name",
+        "-hmn",
+        help="Name of the model to be uploaded or be fine-tuned huggingface.",
     )
 ) -> None:
     """Initialize the mimicbot"""
+    while not huggingface_model_name:
+        huggingface_model_name = typer.prompt(
+            "\nModel name",
+            default=f"mimicbot({session})",
+        )
+        huggingface_model_name = huggingface_model_name.replace(" ", "_")
+
     typer.echo(f"app_path: {app_path}")
     app_path = Path(app_path)
     config.init_app(app_path)
     config.general_config(app_path, data_path, session)
     config.discord_config(app_path, discord_api_key,
                           discord_guild, discord_target_user)
-    config.huggingface_config(app_path, huggingface_api_key)
+    config.huggingface_config(app_path, huggingface_api_key, huggingface_model_name)
 
     reccomended_settings = typer.confirm(
         "\nUse reccommended training settings?", default=True)

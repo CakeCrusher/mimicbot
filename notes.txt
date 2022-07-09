@@ -81,6 +81,13 @@ timeline
   test to make sure it works on CPU
   ensure saving of models happens in data_path
   i cannot delete folders as that will require permissions so use_temp_dir wont happen
+  upload the following issue at some point https://github.com/huggingface/hub-docs/issues/new?assignees=&labels=new-task&template=adding-a-new-task-.md&title=Tracking+integration+for+%5BTASK%5D
+    When searching through docs, the "source documentation" is sometimes not suggested.
+      example: https://huggingface.co/docs/huggingface_hub/package_reference/hf_api#huggingface_hub.HfApi.create_repo
+  steps to scripting train
+    get config file
+    eliminate unecessary portions or at least clean them
+    pass api keys all throught the app
   updated cli init
   clean data
   train

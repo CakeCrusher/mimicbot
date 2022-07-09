@@ -61,7 +61,7 @@ def discord_config(app_path: Path, api_key: str, guild: str, target_user: str):
         config.write(config_file)
 
 
-def huggingface_config(app_path: Path, api_key: str):
+def huggingface_config(app_path: Path, api_key: str, model_name: str):
     config = configparser.ConfigParser()
     try:
         config.read(str(app_path / "config.ini"))
@@ -69,6 +69,7 @@ def huggingface_config(app_path: Path, api_key: str):
         pass
     config.add_section("huggingface")
     config.set("huggingface", "api_key", api_key)
+    config.set("huggingface", "model_name", model_name)
     with open(str(app_path / "config.ini"), "w") as config_file:
         config.write(config_file)
 

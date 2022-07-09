@@ -39,7 +39,11 @@ def app_path_verifier(app_path_str: str) -> None:
             False,
             abort=True,
         )
-        delete_folder(app_path)
+        # rewrite the config file
+        config_parser = configparser.ConfigParser()
+        with open(str(app_path / "config.ini"), "w") as config_file:
+            config_parser.write(config_file)
+
     return app_path_str
 
 
