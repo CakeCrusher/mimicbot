@@ -1,7 +1,8 @@
 import configparser
 from pathlib import Path
+import pdb
 import typer
-from mimicbot import DIR_ERROR, FILE_ERROR, __app_name__, cli
+from mimicbot import DIR_ERROR, FILE_ERROR, __app_name__
 
 APP_DIR_PATH = Path(typer.get_app_dir(__app_name__))
 CONFIG_DIR_PATH = APP_DIR_PATH / "config.ini"

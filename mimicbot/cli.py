@@ -15,6 +15,7 @@ from configparser import ConfigParser
 
 from mimicbot.bot.mine import data_mine
 from pathlib import Path
+import os
 
 app = typer.Typer()
 
@@ -202,13 +203,35 @@ def preprocess_data(
         typer.secho(f"Error: {ERROR[error]}", fg=typer.colors.RED)
         raise typer.Exit(1)
 
-    package_data_for_training, error = data_preprocessing.package_data_for_training(
+    packaged_data_for_training, error = data_preprocessing.package_data_for_training(
         clean_data_path)
     if error:
         typer.secho(f"Error: {ERROR[error]}", fg=typer.colors.RED)
         raise typer.Exit(1)
 
     typer.secho(
-        f"\nData is ready for training. You can find it here [{str(package_data_for_training)}]",
+        f"\nData is ready for training. You can find it here [{str(packaged_data_for_training)}]",
         fg=typer.colors.GREEN
+    )
+
+
+@app.command(name="train")
+def train_model(
+    training_data_path: str = typer.Option(
+        None,
+        "--training-data-path",
+        "-tdp",
+        help="Path to training data"
+    )
+):
+
+    while not training_data_path or not Path(training_data_path).exists():
+        config_parser = utils.callback_config()
+        session_path = utils.session_path(config_parser)
+        training_data_path = typer.prompt(
+            f"\nEnter the path to the training data", default=str(session_path / "training_data")
+        )
+
+    typer.secho(
+        f"\nTraining model. This may take a while. {training_data_path}", fg=typer.colors.YELLOW
     )

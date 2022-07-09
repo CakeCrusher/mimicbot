@@ -76,6 +76,11 @@ timeline
   added an option to extrapolate data
   separated mine and preprocess
   added preprocess tests & updated mine tests
+  implmented a new form of passing a path to the cli which can reference the config
+  at some point i need to flip the guild and session directories to read "../session/guild"
+  test to make sure it works on CPU
+  ensure saving of models happens in data_path
+  i cannot delete folders as that will require permissions so use_temp_dir wont happen
   updated cli init
   clean data
   train

@@ -32,7 +32,7 @@ def data_mine(config_path: Path) -> Tuple[Path, int]:
 
     @client.event
     async def on_ready():
-        CHANNELS_TO_MINE = []  # leave empty to mine all text channels
+        CHANNELS_TO_MINE = ["test"]  # leave empty to mine all text channels
         guild = discord.utils.get(client.guilds, name=GUILD)
         if not guild:
             typer.secho("Guild not found", fg="red")
