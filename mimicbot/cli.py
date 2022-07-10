@@ -10,6 +10,7 @@ from mimicbot import (
     config,
     utils,
     data_preprocessing,
+    train,
 )
 from configparser import ConfigParser
 
@@ -81,7 +82,7 @@ def init(
     while not huggingface_model_name:
         huggingface_model_name = typer.prompt(
             "\nModel name",
-            default=f"mimicbot({session})",
+            default=f"mimicbot-{session}",
         )
         huggingface_model_name = huggingface_model_name.replace(" ", "_")
 
@@ -248,4 +249,15 @@ def train_model(
 
     typer.secho(
         f"\nTraining model. This may take a while. {training_data_path}", fg=typer.colors.YELLOW
+    )
+    
+    res, error = train.train()
+
+    if error:
+        typer.secho(f"Error: {ERROR[error]}", fg=typer.colors.RED)
+        raise typer.Exit(1)
+
+    typer.secho(
+        f"\nSuccessfully trained model. You can find it here [{str(res)}]",
+        fg=typer.colors.GREEN
     )
