@@ -20,6 +20,8 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
 from tqdm.notebook import tqdm, trange
+import gc
+import typer
 
 from requests.exceptions import HTTPError
 
@@ -43,6 +45,7 @@ from mimicbot import (
     config,
     utils,
     API_KEY_ERROR,
+    CHANGE_VALUE,
     SUCCESS,
     Args,
 )
@@ -51,7 +54,7 @@ from mimicbot import (
 from torch.utils.tensorboard import SummaryWriter
 
 
-def train() -> Tuple[Path, int]:
+def train() -> Tuple[str, int]:
     # Configs
     rouge_score = load_metric("rouge")
     logger = logging.getLogger(__name__)
@@ -68,44 +71,6 @@ def train() -> Tuple[Path, int]:
 
     trn_df = pd.read_csv(str(SESSION_PATH / "training_data" / "train.csv"))
     val_df = pd.read_csv(str(SESSION_PATH / "training_data" / "test.csv"))
-    # class Args():
-    #     def __init__(self):
-    #         self.output_dir = str(MODELS_PATH)
-    #         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    #         self.model_type = 'gpt2'
-    #         self.model_path = str(MODELS_PATH / MODEL_TO)
-    #         self.model_name = None
-    #         self.config_name = "microsoft/DialoGPT-small"
-    #         self.tokenizer_name = None
-    #         self.save_to = MODEL_TO
-    #         self.repo = None
-    #         self.cache_dir = str(CACHE_DIR)
-    #         self.block_size = 512
-    #         self.do_train = True
-    #         self.do_eval = True
-    #         self.evaluate_during_training = False
-    #         self.per_gpu_train_batch_size = 4
-    #         self.per_gpu_eval_batch_size = 4
-    #         self.gradient_accumulation_steps = 1
-    #         self.learning_rate = 5e-5
-    #         self.weight_decay = 0.0
-    #         self.adam_epsilon = 1e-8
-    #         self.max_grad_norm = 1.0
-    #         self.num_train_epochs = 3
-    #         self.max_steps = -1
-    #         self.warmup_steps = 0
-    #         self.logging_steps = 1000
-    #         self.save_steps = 3500
-    #         self.save_total_limit = None
-    #         self.eval_all_checkpoints = False
-    #         self.no_cuda = not torch.cuda.is_available()
-    #         self.overwrite_output_dir = True
-    #         self.overwrite_cache = True
-    #         self.should_continue = False
-    #         self.seed = 42
-    #         self.local_rank = -1
-    #         self.fp16 = False
-    #         self.fp16_opt_level = 'O1'
 
     args = Args()
 
@@ -130,14 +95,26 @@ def train() -> Tuple[Path, int]:
     except OSError:
         MODEL_FROM = args.config_name
     except ValueError:
-        return (Path(""), API_KEY_ERROR)
+        return (f"https://huggingface.co/{args.save_to}", API_KEY_ERROR)
+
+    typer.secho(f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Fine tuning model from: https://huggingface.co/{MODEL_FROM}\n", fg=typer.colors.BLUE)
 
     # initiate repository
     if MODEL_FROM != MODEL_TO:
         try:
-            create_repo(args.save_to, private=True, token=HUGGINGFACE_API_KEY)
+            link_to_repo = create_repo(
+                args.save_to, private=True, token=HUGGINGFACE_API_KEY)
+            config = AutoConfig.from_pretrained(
+                args.config_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
             tokenizer = AutoTokenizer.from_pretrained(
                 args.config_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
+            model = AutoModelWithLMHead.from_pretrained(
+                args.config_name,
+                from_tf=False,
+                config=config,
+                cache_dir=args.cache_dir,
+                use_auth_token=HUGGINGFACE_API_KEY
+            ).to(args.device)
             hf_api = HfApi()
             current_dir = os.path.dirname(os.path.abspath(__file__))
             hf_api.upload_file(
@@ -148,15 +125,21 @@ def train() -> Tuple[Path, int]:
                 token=HUGGINGFACE_API_KEY)
             tokenizer.push_to_hub(
                 args.model_path, commit_message="init tokenizer", token=HUGGINGFACE_API_KEY)
+            model.push_to_hub(
+                args.model_path, commit_message="init model", token=HUGGINGFACE_API_KEY)
+            typer.secho(
+                f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Huggingface repo initialized at: {link_to_repo}\n", fg=typer.colors.BLUE)
         except ValueError:
-            return (Path(""), API_KEY_ERROR)
+            return (f"https://huggingface.co/{args.save_to}", API_KEY_ERROR)
         except HTTPError:
-            pass
+            typer.secho(
+                f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Will update repo at: {'https://huggingface.co/'+MODEL_TO}\n", fg=typer.colors.BLUE)
+        except OSError:
+            # cannot delete old model so if model is deleted you need to rename model
+            return (f"https://huggingface.co/{args.save_to}", CHANGE_VALUE)
 
     args.model_name = MODEL_FROM
     args.tokenizer_name = MODEL_FROM
-
-    print(args.model_name)
 
     def construct_conv(row, tokenizer, eos=True):
         def flatten(l): return [item for sublist in l for item in sublist]
@@ -212,20 +195,6 @@ def train() -> Tuple[Path, int]:
     def decodeGeneratedOutput(input, output, tokenizer):
         return tokenizer.decode(output[:, input.shape[-1]:][0], skip_special_tokens=True)
 
-    benchmarkDf = val_df.iloc[:30]
-
-    config = AutoConfig.from_pretrained(
-        args.config_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
-    tokenizer = AutoTokenizer.from_pretrained(
-        args.tokenizer_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
-    model = AutoModelWithLMHead.from_pretrained(
-        args.model_name,
-        from_tf=False,
-        config=config,
-        cache_dir=args.cache_dir,
-        use_auth_token=HUGGINGFACE_API_KEY
-    ).to(args.device)
-
     def makePreds(df, model, tokenizer):
         preds = []
         for i, row in df.iterrows():
@@ -252,13 +221,30 @@ def train() -> Tuple[Path, int]:
         )
         return ({k: np.round(v.mid.fmeasure*100, 4) for k, v in scores.items()}, labels, preds)
 
-    benchmarkScore = computeRouge(benchmarkDf, model, tokenizer)
-    print(benchmarkScore[0])
-    print(list(zip(benchmarkScore[1], benchmarkScore[2]))[:60])
+    benchmarkDf = val_df.iloc[:30]
 
-    def saveToRepo(args, model, tokenizer, message):
+    config = AutoConfig.from_pretrained(
+        args.config_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
+    tokenizer = AutoTokenizer.from_pretrained(
+        args.tokenizer_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
+    model = AutoModelWithLMHead.from_pretrained(
+        args.model_name,
+        from_tf=False,
+        config=config,
+        cache_dir=args.cache_dir,
+        use_auth_token=HUGGINGFACE_API_KEY
+    ).to(args.device)
+
+    benchmarkScore = computeRouge(benchmarkDf, model, tokenizer)
+    typer.secho(
+        f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initial benchmark test: {str(benchmarkScore[0])}\n", fg=typer.colors.BLUE)
+
+    def save_to_repo(args, model, tokenizer, message):
+        typer.secho(
+            f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Uploading model to: https://huggingface.co/{args.save_to}\n", fg=typer.colors.BLUE)
         model.push_to_hub(
             args.model_path, commit_message=f"model: {message}", token=HUGGINGFACE_API_KEY)
+        typer.secho(f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Uploading finished, view it at: https://huggingface.co/{args.save_to}\n", fg=typer.colors.BLUE)
         # tokenizer.push_to_hub(args.model_path, commit_message=f"tokenizer: {message}")
 
     def load_and_cache_examples(args, tokenizer, df_trn, df_val, evaluate=False):
@@ -394,22 +380,22 @@ def train() -> Tuple[Path, int]:
                     args.local_rank], output_device=args.local_rank, find_unused_parameters=True
             )
 
-        # Train!
-        logger.info("***** Running training *****")
-        logger.info("  Num examples = %d", len(train_dataset))
-        logger.info("  Num Epochs = %d", args.num_train_epochs)
-        logger.info("  Instantaneous batch size per GPU = %d",
-                    args.per_gpu_train_batch_size)
-        logger.info(
-            "  Total train batch size (w. parallel, distributed & accumulation) = %d",
-            args.train_batch_size
-            * args.gradient_accumulation_steps
-            * (torch.distributed.get_world_size()
-               if args.local_rank != -1 else 1),
-        )
-        logger.info("  Gradient Accumulation steps = %d",
-                    args.gradient_accumulation_steps)
-        logger.info("  Total optimization steps = %d", t_total)
+        # # Train!
+        # logger.info("***** Running training *****")
+        # logger.info("  Num examples = %d", len(train_dataset))
+        # logger.info("  Num Epochs = %d", args.num_train_epochs)
+        # logger.info("  Instantaneous batch size per GPU = %d",
+        #             args.per_gpu_train_batch_size)
+        # logger.info(
+        #     "  Total train batch size (w. parallel, distributed & accumulation) = %d",
+        #     args.train_batch_size
+        #     * args.gradient_accumulation_steps
+        #     * (torch.distributed.get_world_size()
+        #        if args.local_rank != -1 else 1),
+        # )
+        # logger.info("  Gradient Accumulation steps = %d",
+        #             args.gradient_accumulation_steps)
+        # logger.info("  Total optimization steps = %d", t_total)
 
         global_step = 0
         epochs_trained = 0
@@ -421,8 +407,10 @@ def train() -> Tuple[Path, int]:
                 checkpoint_suffix = args.model_name.split(
                     "-")[-1].split("/")[0]
                 global_step = int(checkpoint_suffix)
-                epochs_trained = global_step // (
-                    len(train_dataloader) // args.gradient_accumulation_steps)
+                # epochs_trained = global_step // (
+                #     len(train_dataloader) // args.gradient_accumulation_steps)
+                # # Reset training when script ran
+                epochs_trained = 0
                 steps_trained_in_current_epoch = global_step % (
                     len(train_dataloader) // args.gradient_accumulation_steps)
 
@@ -445,12 +433,11 @@ def train() -> Tuple[Path, int]:
         )
         set_seed(args)  # Added here for reproducibility
         for _ in train_iterator:
-            print(
-                f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute})Iteration #", _ + 1)
+            typer.secho(
+                f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Iteration #{_ + 1}", fg=typer.colors.BLUE)
             epoch_iterator = tqdm(
                 train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
             for step, batch in enumerate(epoch_iterator):
-
                 # Skip past any already trained steps if resuming training
                 if steps_trained_in_current_epoch > 0:
                     steps_trained_in_current_epoch -= 1
@@ -515,10 +502,6 @@ def train() -> Tuple[Path, int]:
                         model_to_save.save_pretrained(output_dir)
                         tokenizer.save_pretrained(output_dir)
 
-                        print("!!!args")
-                        print(type(args))
-                        print(args)
-
                         torch.save(args, os.path.join(
                             output_dir, "training_args.bin"))
                         logger.info(
@@ -540,11 +523,12 @@ def train() -> Tuple[Path, int]:
                 break
 
             # run benchmark assessment
-            print(computeRouge(benchmarkDf, model, tokenizer)[0])
+            typer.secho(
+                f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Benchmark after iteration #{_+1}: {str(computeRouge(benchmarkDf, model, tokenizer)[0])}\n", fg=typer.colors.BLUE)
             # save
             # pdb.set_trace()
             if saveToHub:
-                saveToRepo(args, model, tokenizer, f"Epoch #{_+1}")
+                save_to_repo(args, model, tokenizer, f"Epoch #{_+1}")
             # pdb.set_trace()
         if args.local_rank in [-1, 0]:
             tb_writer.close()
@@ -579,9 +563,9 @@ def train() -> Tuple[Path, int]:
             model = torch.nn.DataParallel(model)
 
         # Eval!
-        logger.info("***** Running evaluation {} *****".format(prefix))
-        logger.info("  Num examples = %d", len(eval_dataset))
-        logger.info("  Batch size = %d", args.eval_batch_size)
+        # logger.info("***** Running evaluation {} *****".format(prefix))
+        # logger.info("  Num examples = %d", len(eval_dataset))
+        # logger.info("  Batch size = %d", args.eval_batch_size)
         eval_loss = 0.0
         nb_eval_steps = 0
         model.eval()
@@ -612,8 +596,7 @@ def train() -> Tuple[Path, int]:
 
         return result
 
-    def main(df_trn, df_val, args, saveToHub=False):
-
+    def main(df_trn, df_val, args, save_to_hub=False):
         if args.should_continue:
             sorted_checkpoints = _sorted_checkpoints(args)
             if len(sorted_checkpoints) == 0:
@@ -671,14 +654,14 @@ def train() -> Tuple[Path, int]:
         )
         model.to(args.device)
 
-        logger.info("Training/evaluation parameters %s", args)
+        # logger.info("Training/evaluation parameters %s", args)
 
         # Training
         if args.do_train:
             train_dataset = load_and_cache_examples(
                 args, tokenizer, df_trn, df_val, evaluate=False)
             global_step, tr_loss = train(
-                args, train_dataset, model, tokenizer, saveToHub)
+                args, train_dataset, model, tokenizer, save_to_hub)
             logger.info(" global_step = %s, average loss = %s",
                         global_step, tr_loss)
 
@@ -717,7 +700,7 @@ def train() -> Tuple[Path, int]:
                 )
                 logging.getLogger("transformers.modeling_utils").setLevel(
                     logging.WARN)  # Reduce logging
-            logger.info("Evaluate the following checkpoints: %s", checkpoints)
+            # logger.info("Evaluate the following checkpoints: %s", checkpoints)
             for checkpoint in checkpoints:
                 global_step = checkpoint.split(
                     "-")[-1] if len(checkpoints) > 1 else ""
@@ -732,52 +715,16 @@ def train() -> Tuple[Path, int]:
                 result = dict((k + "_{}".format(global_step), v)
                               for k, v in result.items())
                 results.update(result)
-
+        typer.secho(f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Training finished\n", fg=typer.colors.BLUE)
         return results
 
-    import gc
     gc.collect()
     torch.cuda.empty_cache()
-
-    print("!!!args")
-    print(type(args))
-    print(args)
 
     args.num_train_epochs = 1
     args.per_gpu_train_batch_size = 1
     args.per_gpu_eval_batch_size = 1
+
     main(trn_df, val_df, args, True)
 
-    return (Path(""), SUCCESS)
-
-
-# # %%
-# # 63
-# %debug
-
-# # %%
-# tokenizer = AutoTokenizer.from_pretrained(args.save_to)
-# model = AutoModelWithLMHead.from_pretrained(args.save_to).to(args.device)
-# newBenchmarkScores = computeRouge(benchmarkDf, model, tokenizer)
-# print(newBenchmarkScores[0])
-
-# # %% [markdown]
-# # # Overfit Test
-
-# # %%
-# args.num_train_epochs = 10
-# args.per_gpu_train_batch_size = 1
-# args.per_gpu_eval_batch_size = 1
-# main(benchmarkDf[:10], benchmarkDf[:10], args, False)
-
-# # %%
-# tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name)
-# model = AutoModelWithLMHead.from_pretrained(args.output_dir).to(args.device)
-
-# overfitScores = computeRouge(benchmarkDf[:10], model, tokenizer)
-# print(overfitScores[0])
-
-# # %%
-# list(zip(overfitScores[1], overfitScores[2]))
-
-# # %%
+    return (f"https://huggingface.co/{args.save_to}", SUCCESS)

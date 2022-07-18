@@ -80,7 +80,9 @@ timeline
   at some point i need to flip the guild and session directories to read "../session/guild"
   test to make sure it works on CPU
   ensure saving of models happens in data_path
-  i cannot delete folders as that will require permissions so use_temp_dir wont happen
+  upload the following issue at some point
+    i cannot delete folders as that will require permissions so use_temp_dir wont happen
+    https://stackoverflow.com/questions/34716996/cant-remove-a-file-which-created-by-tempfile-mkstemp-on-windows
   upload the following issue at some point https://github.com/huggingface/hub-docs/issues/new?assignees=&labels=new-task&template=adding-a-new-task-.md&title=Tracking+integration+for+%5BTASK%5D
     When searching through docs, the "source documentation" is sometimes not suggested.
       example: https://huggingface.co/docs/huggingface_hub/package_reference/hf_api#huggingface_hub.HfApi.create_repo
@@ -91,3 +93,37 @@ timeline
   updated cli init
   clean data
   train
+    clean out excess outputs
+      fine tuning from
+        "Fine tuning model from: https://huggingface.co/{MODEL_FROM}\n"
+      initialize the repo
+        "Huggingface repo initialized at:\n{}\n"
+        or
+        "Huggingface repo already exists at:\n{}\n"
+      begins with a benchmark test result
+        "Initial benchmark test:\n{}\n"
+      Begin training
+        "Training started at:\n{}\n"
+      Iteration
+        "Iteration #{}:"
+      New benchmark
+        "Benchmark after iteration #{}:\n{}\n"
+      Upload model begin
+        "Uploading model to:\n{}\n"
+      Upload model finished
+        "Uploading finished, view it at:\n{}\n"
+      End training
+        "Training ended at:\n{}\n"
+
+    left off logging at "def main"
+
+    ensure continued training works
+    
+    run tests
+  initialize mimicbot
+    create cli
+    have cli run discord.bot
+    discord bot should calll from users api
+
+  configure github actions
+  

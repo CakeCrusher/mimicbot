@@ -67,7 +67,8 @@ def huggingface_config(app_path: Path, api_key: str, model_name: str):
         config.read(str(app_path / "config.ini"))
     except:
         pass
-    config.add_section("huggingface")
+    if not config.has_section("huggingface"):
+        config.add_section("huggingface")
     config.set("huggingface", "api_key", api_key)
     config.set("huggingface", "model_name", model_name)
     with open(str(app_path / "config.ini"), "w") as config_file:

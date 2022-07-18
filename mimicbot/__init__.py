@@ -11,8 +11,9 @@ __version__ = "0.0.1"
     BOT_ERROR,
     MISSING_GUILD_ERROR,
     USER_NAME_ERROR,
+    CHANGE_VALUE,
     ABORT,
-) = range(10)
+) = range(11)
 
 ERROR = {
     SUCCESS: "SUCCESS",
@@ -24,6 +25,7 @@ ERROR = {
     BOT_ERROR: "BOT_ERROR",
     MISSING_GUILD_ERROR: "MISSING_GUILD_ERROR",
     USER_NAME_ERROR: "USER_NAME_ERROR",
+    CHANGE_VALUE: "CHANGE_VALUE",
     ABORT: "ABORT",
 }
 

@@ -7,6 +7,7 @@ from mimicbot import (
     DIR_ERROR,
     FILE_ERROR,
     API_KEY_ERROR,
+    CHANGE_VALUE,
     config,
     utils,
     data_preprocessing,
@@ -92,7 +93,8 @@ def init(
     config.general_config(app_path, data_path, session)
     config.discord_config(app_path, discord_api_key,
                           discord_guild, discord_target_user)
-    config.huggingface_config(app_path, huggingface_api_key, huggingface_model_name)
+    config.huggingface_config(
+        app_path, huggingface_api_key, huggingface_model_name)
 
     reccomended_settings = typer.confirm(
         "\nUse reccommended training settings?", default=True)
@@ -146,13 +148,19 @@ def init(
     typer.secho("\nSuccessfully initialized mimicbot.", fg=typer.colors.GREEN)
 
 
-@app.command(name="session")
-def set_session(
+@app.command(name="set")
+def set_config(
     session_name: str = typer.Option(
-        str(utils.datetime_str()),
+        None,
         "--session",
         "-s",
         help="Session name for organization of data",
+    ),
+    model_name: str = typer.Option(
+        None,
+        "--model_name",
+        "-mn",
+        help="Name of the model to be uploaded or be fine-tuned huggingface.",
     ),
     app_path: str = typer.Option(
         str(config.APP_DIR_PATH),
@@ -168,10 +176,14 @@ def set_session(
         config_parser.read(str(app_path / "config.ini"))
     except:
         pass
-    config.general_config(app_path, config_parser.get(
-        "general", "data_path"), session_name)
+    if session_name:
+        config.general_config(app_path, config_parser.get(
+            "general", "data_path"), session_name)
+    if model_name:
+        config.huggingface_config(app_path, config_parser.get(
+            "huggingface", "api_key"), model_name)
     typer.secho(
-        f"\nSuccessfully set session name to {session_name}.", fg=typer.colors.GREEN)
+        f"\nSuccessfully set value.", fg=typer.colors.GREEN)
 
 
 @app.command()
@@ -250,10 +262,17 @@ def train_model(
     typer.secho(
         f"\nTraining model. This may take a while. {training_data_path}", fg=typer.colors.YELLOW
     )
-    
+
     res, error = train.train()
 
     if error:
+        # create a switch statement
+
+        if (error == CHANGE_VALUE):
+            typer.secho(
+                f"Error: Please change model name.\nYou may do so with the following command < python -m mimicbot set -mn MODEL_NAME_HERE >", fg=typer.colors.RED)
+            raise typer.Exit(1)
+
         typer.secho(f"Error: {ERROR[error]}", fg=typer.colors.RED)
         raise typer.Exit(1)
 
