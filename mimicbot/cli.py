@@ -229,7 +229,7 @@ def preprocess_data(
         session_path = typer.prompt(
             f"\nEnter the path to the session data", default=str(session_path)
         )
-        
+
     session_path = Path(session_path)
     clean_data_path, error = data_preprocessing.clean_messages(session_path)
     if error:
@@ -309,7 +309,8 @@ def activate_bot(
     # create a multiple choice question
     # ask the user to select the bot to activate
     config_parser = utils.callback_config()
-    model_saves: list[types.ModelSave] = json.loads(config_parser.get("huggingface", "model_saves"))
+    model_saves: list[types.ModelSave] = json.loads(
+        config_parser.get("huggingface", "model_saves"))
     models_string = ""
     for idx, model_save in enumerate(model_saves):
         url = model_save["url"]

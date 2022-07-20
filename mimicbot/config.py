@@ -61,6 +61,7 @@ def discord_config(app_path: Path, api_key: str, guild: str, target_user: str):
     with open(str(app_path / "config.ini"), "w") as config_file:
         config.write(config_file)
 
+
 def huggingface_config(app_path: Path = APP_DIR_PATH, api_key: str = None, model_name: str = None, model_save: types.ModelSave = None):
     config = configparser.ConfigParser()
     try:

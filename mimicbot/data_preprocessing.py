@@ -95,10 +95,11 @@ def clean_df(raw_messages_df: pd.DataFrame, members_df: pd.DataFrame) -> pd.Data
 
     return raw_messages_df
 
+
 def clean_messages(data_path: Path) -> Path:
     if not data_path.exists():
         return (Path(""), DIR_ERROR)
-    
+
     raw_messages_data = pd.read_csv(data_path / "raw_messages.csv")
     members_df = pd.read_csv(data_path / "members.csv")
 
@@ -135,7 +136,6 @@ def package_data_for_training(cleaned_messages_path: Path) -> Path:
         CONTEXT_WINDOW = int(CONTEXT_WINDOW)
         context_for_base_df = CONTEXT_WINDOW
 
-
     response_and_context = []
     for channel in unique_channels:
         channel_messages = cleaned_messages[cleaned_messages["channel"] == channel]
@@ -163,7 +163,6 @@ def package_data_for_training(cleaned_messages_path: Path) -> Path:
     test_data = shuffled_data[:test_size]
     train_data = shuffled_data[test_size:]
 
-    
     if CONTEXT_WINDOW:
         train_data = extrapolate_df(train_data, AMT_OF_CONTEXT, CONTEXT_WINDOW)
         test_data = extrapolate_df(test_data, AMT_OF_CONTEXT, CONTEXT_WINDOW)

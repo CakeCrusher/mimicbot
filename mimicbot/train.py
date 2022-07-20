@@ -712,7 +712,8 @@ def train(session_path: Path) -> Tuple[str, int]:
                 result = dict((k + "_{}".format(global_step), v)
                               for k, v in result.items())
                 results.update(result)
-        typer.secho(f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Training finished\n", fg=typer.colors.BLUE)
+        typer.secho(
+            f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Training finished\n", fg=typer.colors.BLUE)
         return results
 
     gc.collect()
