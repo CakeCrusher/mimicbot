@@ -17,6 +17,7 @@ from mimicbot import (
 from configparser import ConfigParser
 
 from mimicbot.bot.mine import data_mine
+from mimicbot.bot.mimic import start_mimic
 from pathlib import Path
 import os
 import click
@@ -332,5 +333,5 @@ def activate_bot(
         if type(model_idx) != int:
             typer.secho(
                 "The number you entered does not match any model.", fg=typer.colors.RED)
-    model_url = model_saves[model_idx]["url"]
-    print(model_url)
+    model_save = model_saves[model_idx]
+    start_mimic(model_save)
