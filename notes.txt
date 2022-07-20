@@ -122,12 +122,14 @@ timeline
     run tests
   
   CONTINUE IMPLEMENTING "ACTIVATE". LEFT OFF AFTER SETTING UP CLEAN_DF
+    had to reorganize the context_window and context_length so that there would always be a context length used for the same purpose (determining context length)
     will need to add more ModelSave to make up for the environment variables
 
   initialize mimicbot
     create cli
     have cli run discord.bot
     discord bot should call from users api
+    
   
   create github ci/cd
   create train test

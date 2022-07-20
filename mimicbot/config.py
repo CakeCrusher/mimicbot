@@ -73,7 +73,7 @@ def huggingface_config(app_path: Path = APP_DIR_PATH, api_key: str = None, model
         config.set("huggingface", "api_key", api_key)
     if model_name:
         config.set("huggingface", "model_name", model_name)
-    if model_save["url"]:
+    if model_save:
         try:
             current_saves = config.get("huggingface", "model_saves")
         except configparser.NoOptionError:

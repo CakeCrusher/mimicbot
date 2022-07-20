@@ -117,8 +117,9 @@ def package_data_for_training(cleaned_messages_path: Path) -> Path:
     GUILD = config.get("discord", "guild")
     SESSION_NAME = config.get("general", "session")
     AUTHOR_NAME = config.get("discord", "target_user")
-    AMT_OF_CONTEXT = int(config.get("training", "context_window"))
+    AMT_OF_CONTEXT = int(config.get("training", "context_length"))
     TEST_PERC = float(config.get("training", "test_perc"))
+    CONTEXT_WINDOW = config.get("training", "context_window")
     cleaned_messages = pd.read_csv(cleaned_messages_path)
 
     members_df = pd.read_csv(cleaned_messages_path.parent / "members.csv")
@@ -129,22 +130,28 @@ def package_data_for_training(cleaned_messages_path: Path) -> Path:
     unique_channels = cleaned_messages["channel"].unique()
     # progress_bar = tqdm(range(len(cleaned_messages)-7*len(unique_channels)))
 
+    context_for_base_df = AMT_OF_CONTEXT
+    if CONTEXT_WINDOW:
+        CONTEXT_WINDOW = int(CONTEXT_WINDOW)
+        context_for_base_df = CONTEXT_WINDOW
+
+
     response_and_context = []
     for channel in unique_channels:
         channel_messages = cleaned_messages[cleaned_messages["channel"] == channel]
         channel_messages = channel_messages.reset_index(drop=True)
         # iterate through each row of channelMessages
-        for index, row in channel_messages[AMT_OF_CONTEXT:].iterrows():
+        for index, row in channel_messages[context_for_base_df:].iterrows():
             if row["author_id"] == int(AUTHOR_ID):
                 row_response_and_context = []
-                for i in range(index, index-AMT_OF_CONTEXT-1, -1):
+                for i in range(index, index-context_for_base_df-1, -1):
                     row_response_and_context.append(
                         channel_messages.iloc[i].content)
                 response_and_context.append(row_response_and_context)
             # progress_bar.update(1)
 
     response_and_context_columns = ["response"] + \
-        ["context" + str(i+1) for i in range(AMT_OF_CONTEXT)]
+        ["context" + str(i+1) for i in range(context_for_base_df)]
 
     messages_for_model = pd.DataFrame(
         response_and_context, columns=response_and_context_columns
@@ -156,11 +163,10 @@ def package_data_for_training(cleaned_messages_path: Path) -> Path:
     test_data = shuffled_data[:test_size]
     train_data = shuffled_data[test_size:]
 
-    context_length = config.get("training", "context_length")
-    if context_length:
-        context_length = int(context_length)
-        train_data = extrapolate_df(train_data, context_length, AMT_OF_CONTEXT)
-        test_data = extrapolate_df(test_data, context_length, AMT_OF_CONTEXT)
+    
+    if CONTEXT_WINDOW:
+        train_data = extrapolate_df(train_data, AMT_OF_CONTEXT, CONTEXT_WINDOW)
+        test_data = extrapolate_df(test_data, AMT_OF_CONTEXT, CONTEXT_WINDOW)
 
     # make directory if it does not exist
     training_data_dir = cleaned_messages_path.parent / "training_data"

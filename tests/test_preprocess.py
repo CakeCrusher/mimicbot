@@ -53,8 +53,8 @@ class TestPreprocess:
         parsed_config = ConfigParser()
         parsed_config.read(str(mock_config_path_and_data[0]))
         parsed_config.set("discord", "target_user", "SomeUser")
-        parsed_config.set("training", "context_window", "6")
-        parsed_config.set("training", "context_length", "")
+        parsed_config.set("training", "context_window", "")
+        parsed_config.set("training", "context_length", "6")
         parsed_config.set("training", "test_perc", "0.1")
         with open(str(mock_config_path_and_data[0]), "w") as config_file:
             parsed_config.write(config_file)
