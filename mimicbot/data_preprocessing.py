@@ -10,15 +10,10 @@ import numpy as np
 from mimicbot import (SUCCESS, DIR_ERROR, USER_NAME_ERROR)
 
 
-def clean_messages(data_path: Path) -> Path:
-    raw_messages_data = pd.read_csv(data_path / "raw_messages.csv")
-    members_df = pd.read_csv(data_path / "members.csv")
-
-    if not data_path.exists():
-        return (Path(""), DIR_ERROR)
+def clean_df(raw_messages_df: pd.DataFrame, members_df: pd.DataFrame) -> pd.DataFrame:
 
     # replace na rows with empty strings
-    raw_messages_data["content"] = raw_messages_data["content"].apply(
+    raw_messages_df["content"] = raw_messages_df["content"].apply(
         lambda x:
         x if pd.notnull(x) else " "
     )
@@ -35,7 +30,7 @@ def clean_messages(data_path: Path) -> Path:
             text = replace_url(text)
         return text
 
-    raw_messages_data["content"] = raw_messages_data["content"].apply(
+    raw_messages_df["content"] = raw_messages_df["content"].apply(
         replace_all_url_tokens)
 
     # replace discord emojis with their names
@@ -51,9 +46,9 @@ def clean_messages(data_path: Path) -> Path:
             text = replace_emoji(text)
         return text
 
-    raw_messages_data["content"] = raw_messages_data["content"].apply(
+    raw_messages_df["content"] = raw_messages_df["content"].apply(
         replace_all_emoji_tokens)
-    raw_messages_data.head(3)
+    raw_messages_df.head(3)
 
     # replace user mentions with their names
     user_regex = r'<@[0-9]+>'
@@ -73,30 +68,41 @@ def clean_messages(data_path: Path) -> Path:
             text = replace_user_token(text)
         return text
 
-    raw_messages_data["content"] = raw_messages_data["content"].apply(
+    raw_messages_df["content"] = raw_messages_df["content"].apply(
         replace_all_user_tokens)
 
     # get rid of all emoji characters
-    raw_messages_data["content"] = raw_messages_data["content"].apply(
+    raw_messages_df["content"] = raw_messages_df["content"].apply(
         lambda x: re.sub(r'[^\x00-\x7F]+', ' ', x))
 
     # replace line breaks with spaces
-    raw_messages_data["content"] = raw_messages_data["content"].apply(
+    raw_messages_df["content"] = raw_messages_df["content"].apply(
         lambda x: x.replace("\n", " "))
 
     # convert timestamp to uniform datetime
-    raw_messages_data["timestamp"] = pd.to_datetime(
-        raw_messages_data["timestamp"])
+    raw_messages_df["timestamp"] = pd.to_datetime(
+        raw_messages_df["timestamp"])
 
     # uniformly order by timestamp
-    ordered_df = pd.DataFrame(columns=raw_messages_data.columns)
-    for channel in raw_messages_data["channel"].unique():
-        channel_messages = raw_messages_data[raw_messages_data["channel"] == channel]
+    ordered_df = pd.DataFrame(columns=raw_messages_df.columns)
+    for channel in raw_messages_df["channel"].unique():
+        channel_messages = raw_messages_df[raw_messages_df["channel"] == channel]
         channel_messages = channel_messages.sort_values(by="timestamp")
         # POTENTIALLY PROBLEMATIC vvv
         ordered_df = pd.concat(
             [ordered_df, channel_messages], ignore_index=True)
-    raw_messages_data = ordered_df
+    raw_messages_df = ordered_df
+
+    return raw_messages_df
+
+def clean_messages(data_path: Path) -> Path:
+    if not data_path.exists():
+        return (Path(""), DIR_ERROR)
+    
+    raw_messages_data = pd.read_csv(data_path / "raw_messages.csv")
+    members_df = pd.read_csv(data_path / "members.csv")
+
+    raw_messages_data = clean_df(raw_messages_data, members_df)
 
     # save data
     raw_messages_data.to_csv(data_path / "cleaned_messages.csv", index=False)

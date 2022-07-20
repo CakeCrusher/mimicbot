@@ -12,12 +12,16 @@ from mimicbot import (
     utils,
     data_preprocessing,
     train,
+    types,
 )
 from configparser import ConfigParser
 
 from mimicbot.bot.mine import data_mine
 from pathlib import Path
 import os
+import click
+import json
+
 
 app = typer.Typer()
 
@@ -258,12 +262,13 @@ def train_model(
         training_data_path = typer.prompt(
             f"\nEnter the path to the training data", default=str(session_path / "training_data")
         )
+    training_data_path = Path(training_data_path)
 
     typer.secho(
         f"\nTraining model. This may take a while. {training_data_path}", fg=typer.colors.YELLOW
     )
 
-    res, error = train.train()
+    res, error = train.train(training_data_path.parent)
 
     if error:
         # create a switch statement
@@ -276,7 +281,51 @@ def train_model(
         typer.secho(f"Error: {ERROR[error]}", fg=typer.colors.RED)
         raise typer.Exit(1)
 
+    config.huggingface_config(
+        model_save={
+            "url": res,
+            "data_path": str(training_data_path.parent),
+        })
+
     typer.secho(
-        f"\nSuccessfully trained model. You can find it here [{str(res)}]",
+        f"\nSuccessfully trained and saved the model. You can find it here [{str(res)}]",
         fg=typer.colors.GREEN
     )
+
+
+@app.command(name="activate")
+def activate_bot(
+    model_idx=typer.Option(
+        None,
+        "--model-idx",
+        "-mi",
+        help="Index of the model to be activated."
+    )
+):
+    # create a multiple choice question
+    # ask the user to select the bot to activate
+    config_parser = utils.callback_config()
+    model_saves: list[types.ModelSave] = json.loads(config_parser.get("huggingface", "model_saves"))
+    models_string = ""
+    for idx, model_save in enumerate(model_saves):
+        url = model_save["url"]
+        models_string += f"({idx}) {url}\n"
+    model_idx = ""
+    while type(model_idx) != int:
+        model_idx = typer.prompt(
+            "\nModel to run bot on:\n" + models_string + "Enter numberof model",
+            default=f"0",
+        )
+        try:
+            model_idx = int(model_idx)
+            if abs(model_idx) >= len(model_saves):
+                model_idx = ""
+                assert False
+        except:
+            pass
+
+        if type(model_idx) != int:
+            typer.secho(
+                "The number you entered does not match any model.", fg=typer.colors.RED)
+    model_url = model_saves[model_idx]["url"]
+    print(model_url)

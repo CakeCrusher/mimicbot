@@ -2,7 +2,8 @@ import configparser
 from pathlib import Path
 import pdb
 import typer
-from mimicbot import DIR_ERROR, FILE_ERROR, __app_name__
+from mimicbot import DIR_ERROR, FILE_ERROR, __app_name__, types
+import json
 
 APP_DIR_PATH = Path(typer.get_app_dir(__app_name__))
 CONFIG_DIR_PATH = APP_DIR_PATH / "config.ini"
@@ -60,8 +61,7 @@ def discord_config(app_path: Path, api_key: str, guild: str, target_user: str):
     with open(str(app_path / "config.ini"), "w") as config_file:
         config.write(config_file)
 
-
-def huggingface_config(app_path: Path, api_key: str, model_name: str):
+def huggingface_config(app_path: Path = APP_DIR_PATH, api_key: str = None, model_name: str = None, model_save: types.ModelSave = None):
     config = configparser.ConfigParser()
     try:
         config.read(str(app_path / "config.ini"))
@@ -69,8 +69,19 @@ def huggingface_config(app_path: Path, api_key: str, model_name: str):
         pass
     if not config.has_section("huggingface"):
         config.add_section("huggingface")
-    config.set("huggingface", "api_key", api_key)
-    config.set("huggingface", "model_name", model_name)
+    if api_key:
+        config.set("huggingface", "api_key", api_key)
+    if model_name:
+        config.set("huggingface", "model_name", model_name)
+    if model_save["url"]:
+        try:
+            current_saves = config.get("huggingface", "model_saves")
+        except configparser.NoOptionError:
+            config.set("huggingface", "model_saves", "[]")
+            current_saves = "[]"
+        current_saves = json.loads(current_saves)
+        new_saves = json.dumps([model_save] + current_saves)
+        config.set("huggingface", "model_saves", new_saves)
     with open(str(app_path / "config.ini"), "w") as config_file:
         config.write(config_file)
 

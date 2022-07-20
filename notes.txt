@@ -120,10 +120,18 @@ timeline
     ensure continued training works
     
     run tests
+  
+  CONTINUE IMPLEMENTING "ACTIVATE". LEFT OFF AFTER SETTING UP CLEAN_DF
+    will need to add more ModelSave to make up for the environment variables
+
   initialize mimicbot
     create cli
     have cli run discord.bot
-    discord bot should calll from users api
+    discord bot should call from users api
+  
+  create github ci/cd
+  create train test
+
 
   configure github actions
   

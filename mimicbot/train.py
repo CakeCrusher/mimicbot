@@ -54,17 +54,14 @@ from mimicbot import (
 from torch.utils.tensorboard import SummaryWriter
 
 
-def train() -> Tuple[str, int]:
+def train(session_path: Path) -> Tuple[str, int]:
     # Configs
     rouge_score = load_metric("rouge")
     logger = logging.getLogger(__name__)
     config_parser = utils.callback_config()
     HUGGINGFACE_API_KEY = config_parser.get("huggingface", "api_key")
-    DATA_PATH = Path(config_parser.get("general", "data_path"))
-    MODELS_PATH = DATA_PATH / "models"
-    SESSION_PATH = DATA_PATH / \
-        config_parser.get("discord", "guild") / \
-        config_parser.get("general", "session")
+    MODELS_PATH = session_path.parent.parent / "models"
+    SESSION_PATH = session_path
     CACHE_DIR = MODELS_PATH / "cache"
     MODEL_TO = get_full_repo_name(config_parser.get(
         "huggingface", "model_name"), token=HUGGINGFACE_API_KEY)
@@ -303,7 +300,7 @@ def train() -> Tuple[str, int]:
         """ Train the model """
         if args.local_rank in [-1, 0]:
             if not (Path(args.output_dir) / "SummaryWriter-log").exists():
-                os.makedirs(Path(args.output_dir / "SummaryWriter-log"))
+                os.makedirs(Path(args.output_dir) / "SummaryWriter-log")
             tb_writer = SummaryWriter(log_dir=str(
                 Path(args.output_dir) / "SummaryWriter-log"))
         args.train_batch_size = args.per_gpu_train_batch_size * \
