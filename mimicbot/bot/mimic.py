@@ -40,9 +40,23 @@ def start_mimic(model_save: types.ModelSave):
             [message.content, message.created_at, message.channel.name]
             for message in messages
         ]
+
+        # remove first mention of bot from each message
+        for idx, context_data_ins in enumerate(context_data):
+            message = context_data_ins[0]
+            bot_id_decorated = f"<@{bot.user.id}>"
+            split_by_bot_id = message.split(bot_id_decorated)
+            start_of_message = split_by_bot_id[0]
+            rest_of_message = bot_id_decorated.join(split_by_bot_id[1:])
+            new_message = (start_of_message + rest_of_message).strip()
+            context_data[idx][0] = new_message
+        
+        
         context_df = pd.DataFrame(
             columns=messages_df_columns, data=context_data)
         context_df = data_preprocessing.clean_df(context_df, members_df)
+        
+        print(context_df)
 
         return EOS_TOKEN.join(list(context_df["content"])) + EOS_TOKEN
 
@@ -88,6 +102,7 @@ def start_mimic(model_save: types.ModelSave):
                 context_messages = await channel.history(limit=int(AMT_OF_CONTEXT)).flatten()
                 payload_text = messages_into_input(
                     context_messages, members_df)
+
                 query_res = query(payload_text)
                 attempts = 0
                 print(query_res)
