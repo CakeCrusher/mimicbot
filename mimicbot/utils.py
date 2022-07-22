@@ -2,8 +2,9 @@ import configparser
 import datetime
 from pathlib import Path
 import typer
-from mimicbot import config, __app_name__
+from mimicbot import config, __app_name__, types
 from collections.abc import Callable
+import json
 
 APP_DIR_PATH = Path(typer.get_app_dir(__app_name__))
 
@@ -51,17 +52,27 @@ def datetime_str():
     return datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
 
 
-def callback_config(callback: Callable[[configparser.ConfigParser], configparser.ConfigParser] | None = None, app_path: Path = APP_DIR_PATH / "config.ini") -> configparser.ConfigParser:
+def callback_config(callback: Callable[[configparser.ConfigParser], configparser.ConfigParser] | None = None, app_path: Path = APP_DIR_PATH) -> configparser.ConfigParser:
     config = configparser.ConfigParser()
+    config_path = app_path / "config.ini"
     try:
-        config.read(str(app_path))
+        config.read(str(config_path))
     except:
         raise FileNotFoundError
     if callback:
         config = callback(config)
-    with open(str(app_path), "w") as config_file:
+    with open(str(config_path), "w") as config_file:
         config.write(config_file)
     return config
+
+
+def current_config(category: str, value: str, default: str = None, app_path: Path = APP_DIR_PATH) -> str or None:
+    config = configparser.ConfigParser()
+    try:
+        config.read(str(app_path / "config.ini"))
+        return config.get(category, value)
+    except:
+        return default
 
 
 def session_path(config: configparser.ConfigParser) -> Path:
@@ -70,3 +81,18 @@ def session_path(config: configparser.ConfigParser) -> Path:
     SESSION_NAME = config.get("general", "session")
     SESSION_DATA_PATH = Path(DATA_PATH) / Path(GUILD) / Path(SESSION_NAME)
     return SESSION_DATA_PATH
+
+
+def add_model_save(app_path, model_save: types.ModelSave):
+    config_parser = configparser.ConfigParser()
+    config_path = app_path / "config.ini"
+    try:
+        config_parser.read(str(config_path))
+    except:
+        raise FileNotFoundError
+    current_saves = config_parser.get("huggingface", "model_saves")
+    current_saves = json.loads(current_saves)
+    new_saves = json.dumps([model_save] + current_saves)
+    config_parser.set("huggingface", "model_saves", new_saves)
+    with open(str(config_path), "w") as config_file:
+        config_parser.write(config_file)

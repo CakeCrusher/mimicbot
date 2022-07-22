@@ -1,4 +1,5 @@
 import configparser
+from random import random
 import typer
 from mimicbot import (
     ERROR,
@@ -22,6 +23,7 @@ from pathlib import Path
 import os
 import click
 import json
+import datetime
 
 
 app = typer.Typer()
@@ -29,12 +31,6 @@ app = typer.Typer()
 
 @app.command()
 def init(
-    session: str = typer.Option(
-        str(utils.datetime_str()),
-        "--session",
-        "-s",
-        help="Session name for organization of data",
-    ),
     app_path: str = typer.Option(
         str(config.APP_DIR_PATH),
         "--app-path",
@@ -42,55 +38,60 @@ def init(
         help="(WARNING: do not change)\nPath to mimicbot config and user data.",
         callback=utils.app_path_verifier,
     ),
+    session: str = typer.Option(
+        utils.current_config("general", "session",
+                             default=str(utils.datetime_str())),
+        "--session",
+        "-s",
+        prompt="\nSession name",
+        help="Session name for organization of data",
+    ),
     data_path: str = typer.Option(
-        str(config.APP_DIR_PATH / "data"),
+        utils.current_config("general", "data_path",
+                             default=str(config.APP_DIR_PATH / "data")),
         "--data-path",
         "-dp",
-        prompt="Path to store data",
+        prompt="\nPath to store data",
         help="Path to mimicbot mined data.",
     ),
     discord_api_key: str = typer.Option(
-        ...,
+        utils.current_config("discord", "api_key"),
         "--discord-api-key",
         "-dak",
         prompt="\nGuide to creating discord bot and retrieving the API key: (https://youtube.com/)\nEnter your Discord API key",
         help="API key for the discord bot.",
     ),
     discord_guild: str = typer.Option(
-        ...,
+        utils.current_config("discord", "guild"),
         "--discord-guild",
         "-dg",
         prompt="\n(for use in gathering data)\n*you must have admin privilages\nDiscord guild(server) name",
         help="Discord guild(server) name",
     ),
     discord_target_user: str = typer.Option(
-        ...,
+        utils.current_config("discord", "target_user"),
         "--discord-target-user",
         "-dtu",
         prompt="\n(user to mimic from the discord guild)\nTarget user",
         help="Discord user from guild(server) to mimic.",
     ),
     huggingface_api_key: str = typer.Option(
-        ...,
+        utils.current_config("huggingface", "api_key"),
         "--huggingface-api-key",
         "-hak",
         prompt="\nGuide to retrieving huggingface API key: (https://youtube.com/)\nEnter your huggingface API key",
         help="Huggingface's write key to upload models to your account.",
     ),
     huggingface_model_name: str = typer.Option(
-        None,
+        utils.current_config("huggingface", "model_name",
+                             default=f"mimicbot-{str(int(random() * 1000))}"),
         "--huggingface-model-name",
         "-hmn",
+        prompt="\nEnter the name of the model",
         help="Name of the model to be uploaded or be fine-tuned huggingface.",
     )
 ) -> None:
     """Initialize the mimicbot"""
-    while not huggingface_model_name:
-        huggingface_model_name = typer.prompt(
-            "\nModel name",
-            default=f"mimicbot-{session}",
-        )
-        huggingface_model_name = huggingface_model_name.replace(" ", "_")
 
     typer.echo(f"app_path: {app_path}")
     app_path = Path(app_path)
@@ -99,7 +100,7 @@ def init(
     config.discord_config(app_path, discord_api_key,
                           discord_guild, discord_target_user)
     config.huggingface_config(
-        app_path, huggingface_api_key, huggingface_model_name)
+        app_path, huggingface_api_key, huggingface_model_name, "[]")
 
     reccomended_settings = typer.confirm(
         "\nUse reccommended training settings?", default=True)
@@ -149,7 +150,8 @@ def init(
     else:
         config.training_config(app_path, "", "2", "0.1")
 
-    typer.secho("\nSuccessfully initialized mimicbot.", fg=typer.colors.GREEN)
+    typer.secho(
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully initialized mimicbot.", fg=typer.colors.GREEN)
 
 
 @app.command(name="set")
@@ -185,7 +187,7 @@ def set_config(
             "general", "data_path"), session_name)
     if model_name:
         config.huggingface_config(app_path, config_parser.get(
-            "huggingface", "api_key"), model_name)
+            "huggingface", "api_key"), model_name, config_parser.get("huggingface", "model_saves"))
     typer.secho(
         f"\nSuccessfully set value.", fg=typer.colors.GREEN)
 
@@ -197,9 +199,17 @@ def mine(
         "--app-path",
         "-ap",
         help="Path to mimicbot data."
-    )
+    ),
+    forge_pipeline: bool = typer.Option(
+        False,
+        "--forge-pipeline",
+        "-fp",
+        help="Is running forge command.",
+    ),
 ) -> None:
     """Run the mimicbot"""
+    typer.secho(
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Begginging to mine data.", fg=typer.colors.BLUE)
     app_path: Path = utils.ensure_app_path(Path(app_path))
 
     data_path, error = data_mine(app_path / "config.ini")
@@ -208,7 +218,7 @@ def mine(
         raise typer.Exit(1)
 
     typer.secho(
-        f"\nSuccessfully mined data. You can find it here [{str(data_path)}]",
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully mined data. You can find it here [{str(data_path)}]",
         fg=typer.colors.GREEN
     )
 
@@ -221,15 +231,21 @@ def preprocess_data(
         "-sp",
         help="Path to session data."
     ),
-
+    forge_pipeline: bool = typer.Option(
+        False,
+        "--forge-pipeline",
+        "-fp",
+        help="Is running forge command.",
+    ),
 ) -> None:
 
     while not session_path or not Path(session_path).exists():
         config_parser = utils.callback_config()
         session_path = utils.session_path(config_parser)
-        session_path = typer.prompt(
-            f"\nEnter the path to the session data", default=str(session_path)
-        )
+        if not forge_pipeline:
+            session_path = typer.prompt(
+                f"\nEnter the path to the session data", default=str(session_path)
+            )
 
     session_path = Path(session_path)
     clean_data_path, error = data_preprocessing.clean_messages(session_path)
@@ -244,34 +260,41 @@ def preprocess_data(
         raise typer.Exit(1)
 
     typer.secho(
-        f"\nData is ready for training. You can find it here [{str(packaged_data_for_training)}]",
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Data is ready for training. You can find it here [{str(packaged_data_for_training)}]",
         fg=typer.colors.GREEN
     )
 
 
 @app.command(name="train")
 def train_model(
-    training_data_path: str = typer.Option(
+    session_path: str = typer.Option(
         None,
-        "--training-data-path",
-        "-tdp",
-        help="Path to training data"
-    )
+        "--session-path",
+        "-sp",
+        help="Path to session data."
+    ),
+    forge_pipeline: bool = typer.Option(
+        False,
+        "--forge-pipeline",
+        "-fp",
+        help="Is running forge command.",
+    ),
 ):
 
-    while not training_data_path or not Path(training_data_path).exists():
+    while not session_path or not Path(session_path).exists():
         config_parser = utils.callback_config()
         session_path = utils.session_path(config_parser)
-        training_data_path = typer.prompt(
-            f"\nEnter the path to the training data", default=str(session_path / "training_data")
-        )
-    training_data_path = Path(training_data_path)
+        if not forge_pipeline:
+            session_path = typer.prompt(
+                f"\nEnter the path to the session data", default=str(session_path)
+            )
+    session_path = Path(session_path)
 
     typer.secho(
-        f"\nTraining model. This may take a while. {training_data_path}", fg=typer.colors.YELLOW
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Training model. This may take a while.", fg=typer.colors.YELLOW
     )
 
-    res, error = train.train(training_data_path.parent)
+    res, error = train.train(session_path)
 
     if error:
         # create a switch statement
@@ -285,15 +308,15 @@ def train_model(
         raise typer.Exit(1)
     config_parser = utils.callback_config()
     context_length = int(config_parser.get("training", "context_length"))
-    config.huggingface_config(
-        model_save={
-            "url": res,
-            "context_length": context_length,
-            "data_path": str(training_data_path.parent),
-        })
+    model_save = {
+        "url": res,
+        "context_length": context_length,
+        "data_path": str(session_path),
+    }
+    utils.add_model_save(session_path.parent.parent.parent, model_save)
 
     typer.secho(
-        f"\nSuccessfully trained and saved the model. You can find it here [{str(res)}]",
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully trained and saved the model. You can find it here [{str(res)}]",
         fg=typer.colors.GREEN
     )
 
@@ -305,7 +328,13 @@ def activate_bot(
         "--model-idx",
         "-mi",
         help="Index of the model to be activated."
-    )
+    ),
+    forge_pipeline: bool = typer.Option(
+        False,
+        "--forge-pipeline",
+        "-fp",
+        help="Is running forge command.",
+    ),
 ):
     # create a multiple choice question
     # ask the user to select the bot to activate
@@ -317,6 +346,8 @@ def activate_bot(
         url = model_save["url"]
         models_string += f"({idx}) {url}\n"
     model_idx = ""
+    if forge_pipeline:
+        model_idx = 0
     while type(model_idx) != int:
         model_idx = typer.prompt(
             "\nModel to run bot on:\n" + models_string + "Enter numberof model",
@@ -335,3 +366,13 @@ def activate_bot(
                 "The number you entered does not match any model.", fg=typer.colors.RED)
     model_save = model_saves[model_idx]
     start_mimic(model_save)
+
+
+@app.command(name="forge")
+def forge(
+):
+    os.system("python -m mimicbot init")
+    os.system("python -m mimicbot mine --forge-pipeline")
+    os.system("python -m mimicbot preprocess --forge-pipeline")
+    os.system("python -m mimicbot train --forge-pipeline")
+    os.system("python -m mimicbot activate --forge-pipeline")

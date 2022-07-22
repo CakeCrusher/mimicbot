@@ -130,10 +130,17 @@ timeline
     have cli run discord.bot
     discord bot should call from users api
     
-  
+  create end to end cli command
+    create cli
+    have cli run mimicbot
+    create test
+  deal with out of memory issues
+  create a mimicbot-deploy repo
   create github ci/cd
+  
   create train test
 
 
+  maybe modify num train epochs
   configure github actions
   

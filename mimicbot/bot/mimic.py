@@ -14,6 +14,7 @@ import asyncio
 import pdb
 from pathlib import Path
 import typer
+import datetime
 
 
 def start_mimic(model_save: types.ModelSave):
@@ -27,7 +28,8 @@ def start_mimic(model_save: types.ModelSave):
     # members_df = pd.read_csv(str(Path(model_save["data_path"]) / "members.csv"))
     members_df = None
 
-    typer.secho("Starting MimicBot.", fg=typer.colors.BLUE)
+    typer.secho(
+        f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Starting MimicBot.", fg=typer.colors.BLUE)
 
     intents = discord.Intents.default()
     intents.members = True
@@ -50,13 +52,10 @@ def start_mimic(model_save: types.ModelSave):
             rest_of_message = bot_id_decorated.join(split_by_bot_id[1:])
             new_message = (start_of_message + rest_of_message).strip()
             context_data[idx][0] = new_message
-        
-        
+
         context_df = pd.DataFrame(
             columns=messages_df_columns, data=context_data)
         context_df = data_preprocessing.clean_df(context_df, members_df)
-        
-        print(context_df)
 
         return EOS_TOKEN.join(list(context_df["content"])) + EOS_TOKEN
 
@@ -78,8 +77,8 @@ def start_mimic(model_save: types.ModelSave):
 
     @bot.event
     async def on_ready():
-        typer.secho(f'{bot.user} has connected to Discord.',
-                    fg=typer.colors.BLUE)
+        typer.secho(f'\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) {bot.user} has been activated.',
+                    fg=typer.colors.GREEN)
 
     @bot.event
     async def on_message(message):
@@ -97,20 +96,22 @@ def start_mimic(model_save: types.ModelSave):
         # if bot is mentioned
         if f"<@{bot.user.id}>" in message.content:
             async with channel.typing():
-                typer.secho(f"{message.author} mentioned me",
+                typer.secho(f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) {message.author} mentioned me",
                             fg=typer.colors.BLUE)
                 context_messages = await channel.history(limit=int(AMT_OF_CONTEXT)).flatten()
                 payload_text = messages_into_input(
                     context_messages, members_df)
-
+                typer.echo(
+                    f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) {payload_text}")
                 query_res = query(payload_text)
                 attempts = 0
-                print(query_res)
+                typer.echo(
+                    f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) {query_res}")
                 while "error" in query_res.keys() and attempts <= 3:
                     # wait for model to load and try again
                     time_to_load = int(int(query_res["estimated_time"]) * 1.3)
                     typer.secho(
-                        f"Waiting for model to load. Will take {time_to_load}s", fg=typer.colors.YELLOW)
+                        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Waiting for model to load. Will take {time_to_load}s", fg=typer.colors.YELLOW)
                     await asyncio.sleep(time_to_load)
                     query_res = query(payload_text)
                     attempts += 1

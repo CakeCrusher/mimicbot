@@ -125,12 +125,12 @@ def train(session_path: Path) -> Tuple[str, int]:
             model.push_to_hub(
                 args.model_path, commit_message="init model", token=HUGGINGFACE_API_KEY)
             typer.secho(
-                f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Huggingface repo initialized at: {link_to_repo}\n", fg=typer.colors.BLUE)
+                f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Huggingface repo initialized at: {link_to_repo}", fg=typer.colors.BLUE)
         except ValueError:
             return (f"https://huggingface.co/{args.save_to}", API_KEY_ERROR)
         except HTTPError:
             typer.secho(
-                f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Will update repo at: {'https://huggingface.co/'+MODEL_TO}\n", fg=typer.colors.BLUE)
+                f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Will update repo at: {'https://huggingface.co/'+MODEL_TO}", fg=typer.colors.BLUE)
         except OSError:
             # cannot delete old model so if model is deleted you need to rename model
             return (f"https://huggingface.co/{args.save_to}", CHANGE_VALUE)
@@ -234,14 +234,14 @@ def train(session_path: Path) -> Tuple[str, int]:
 
     benchmarkScore = computeRouge(benchmarkDf, model, tokenizer)
     typer.secho(
-        f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initial benchmark test: {str(benchmarkScore[0])}\n", fg=typer.colors.BLUE)
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initial benchmark test: {str(benchmarkScore[0])}", fg=typer.colors.BLUE)
 
     def save_to_repo(args, model, tokenizer, message):
         typer.secho(
-            f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Uploading model to: https://huggingface.co/{args.save_to}\n", fg=typer.colors.BLUE)
+            f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Uploading model to: https://huggingface.co/{args.save_to}", fg=typer.colors.BLUE)
         model.push_to_hub(
             args.model_path, commit_message=f"model: {message}", token=HUGGINGFACE_API_KEY)
-        typer.secho(f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Uploading finished, view it at: https://huggingface.co/{args.save_to}\n", fg=typer.colors.BLUE)
+        typer.secho(f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Uploading finished, view it at: https://huggingface.co/{args.save_to}", fg=typer.colors.BLUE)
         # tokenizer.push_to_hub(args.model_path, commit_message=f"tokenizer: {message}")
 
     def load_and_cache_examples(args, tokenizer, df_trn, df_val, evaluate=False):
@@ -431,7 +431,7 @@ def train(session_path: Path) -> Tuple[str, int]:
         set_seed(args)  # Added here for reproducibility
         for _ in train_iterator:
             typer.secho(
-                f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Iteration #{_ + 1}", fg=typer.colors.BLUE)
+                f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Iteration #{_ + 1}", fg=typer.colors.BLUE)
             epoch_iterator = tqdm(
                 train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
             for step, batch in enumerate(epoch_iterator):
@@ -521,7 +521,7 @@ def train(session_path: Path) -> Tuple[str, int]:
 
             # run benchmark assessment
             typer.secho(
-                f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Benchmark after iteration #{_+1}: {str(computeRouge(benchmarkDf, model, tokenizer)[0])}\n", fg=typer.colors.BLUE)
+                f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Benchmark after iteration #{_+1}: {str(computeRouge(benchmarkDf, model, tokenizer)[0])}", fg=typer.colors.BLUE)
             # save
             # pdb.set_trace()
             if saveToHub:
@@ -713,12 +713,13 @@ def train(session_path: Path) -> Tuple[str, int]:
                               for k, v in result.items())
                 results.update(result)
         typer.secho(
-            f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Training finished\n", fg=typer.colors.BLUE)
+            f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Training finished\n", fg=typer.colors.BLUE)
         return results
 
     gc.collect()
     torch.cuda.empty_cache()
 
+    # TODO
     args.num_train_epochs = 1
     args.per_gpu_train_batch_size = 1
     args.per_gpu_eval_batch_size = 1
