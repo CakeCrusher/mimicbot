@@ -22,7 +22,7 @@ def start_mimic(model_save: types.ModelSave):
     MIMICBOT_TOKEN = config_parser.get("discord", "api_key")
     # CHANNEL = os.getenv("CHANNEL")
     HF_TOKEN = config_parser.get("huggingface", "api_key")
-    AMT_OF_CONTEXT = config_parser.get("training", "context_length")
+    AMT_OF_CONTEXT = int(model_save["context_length"])
     MODEL_ID = "/".join(model_save["url"].split("/")[-2:])
     EOS_TOKEN = "<|endoftext|>"
     # members_df = pd.read_csv(str(Path(model_save["data_path"]) / "members.csv"))

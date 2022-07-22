@@ -24,6 +24,7 @@ import os
 import click
 import json
 import datetime
+from huggingface_hub import get_full_repo_name
 
 
 app = typer.Typer()
@@ -341,31 +342,10 @@ def activate_bot(
     config_parser = utils.callback_config()
     model_saves: list[types.ModelSave] = json.loads(
         config_parser.get("huggingface", "model_saves"))
-    models_string = ""
-    for idx, model_save in enumerate(model_saves):
-        url = model_save["url"]
-        models_string += f"({idx}) {url}\n"
-    model_idx = ""
-    if forge_pipeline:
-        model_idx = 0
-    while type(model_idx) != int:
-        model_idx = typer.prompt(
-            "\nModel to run bot on:\n" + models_string + "Enter numberof model",
-            default=f"0",
-        )
-        try:
-            model_idx = int(model_idx)
-            if abs(model_idx) >= len(model_saves):
-                model_idx = ""
-                assert False
-        except:
-            pass
-
-        if type(model_idx) != int:
-            typer.secho(
-                "The number you entered does not match any model.", fg=typer.colors.RED)
+    model_idx = utils.prompt_model_save()
     model_save = model_saves[model_idx]
-    start_mimic(model_save)
+    print(model_save)
+    # start_mimic(model_save)
 
 
 @app.command(name="forge")
@@ -376,3 +356,29 @@ def forge(
     os.system("python -m mimicbot preprocess --forge-pipeline")
     os.system("python -m mimicbot train --forge-pipeline")
     os.system("python -m mimicbot activate --forge-pipeline")
+
+
+@app.command(name="env")
+def generate_env():
+    config_parser = utils.callback_config()
+    model_saves: list[types.ModelSave] = json.loads(
+        config_parser.get("huggingface", "model_saves"))
+    model_idx = utils.prompt_model_save()
+    model_save: types.ModelSave = model_saves[model_idx]
+
+    DISCORD_API_KEY = utils.current_config("discord", "api_key")
+    HUGGINGFACE_API_KEY = utils.current_config("huggingface", "api_key")
+    CONTEXT_LENGTH = model_save["context_length"]
+    MODEL_ID = "/".join(model_save["url"].split("/")[-2:])
+
+    with open(".env", "w") as f:
+        f.write(
+            f"""DISCORD_API_KEY={DISCORD_API_KEY}\nHUGGINGFACE_API_KEY={HUGGINGFACE_API_KEY}\nCONTEXT_LENGTH={CONTEXT_LENGTH}\nMODEL_ID={MODEL_ID}""")
+
+    # get current directory with Path
+    current_dir = Path(__file__).parent / ".env"
+
+    typer.secho(
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully generated .env file it is located in this directory [{str(current_dir)}].",
+        fg=typer.colors.GREEN
+    )

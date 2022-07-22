@@ -96,3 +96,31 @@ def add_model_save(app_path, model_save: types.ModelSave):
     config_parser.set("huggingface", "model_saves", new_saves)
     with open(str(config_path), "w") as config_file:
         config_parser.write(config_file)
+
+
+def prompt_model_save() -> int:
+    config_parser = callback_config()
+    model_saves: list[types.ModelSave] = json.loads(
+        config_parser.get("huggingface", "model_saves"))
+    models_string = ""
+    for idx, model_save in enumerate(model_saves):
+        url = model_save["url"]
+        models_string += f"({idx}) {url}\n"
+    model_idx = ""
+    while type(model_idx) != int:
+        model_idx = typer.prompt(
+            "\nModel to run bot on:\n" + models_string + "Enter numberof model",
+            default=f"0",
+        )
+        try:
+            model_idx = int(model_idx)
+            if abs(model_idx) >= len(model_saves):
+                model_idx = ""
+                assert False
+        except:
+            pass
+
+        if type(model_idx) != int:
+            typer.secho(
+                "The number you entered does not match any model.", fg=typer.colors.RED)
+    return model_idx
