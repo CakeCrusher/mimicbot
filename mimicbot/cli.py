@@ -308,7 +308,7 @@ def train_model(
             raise typer.Exit(1)
         elif (error == GPU_ERROR):
             typer.secho(
-                f"Your GPU ran out of memory.\nAmong the many ways of going about solving this, here is a quick one: .", fg=typer.colors.RED)
+                f"Your GPU ran out of memory.\nAmong the many ways of going about solving this, here is a quick one: https://github.com/CakeCrusher/mimicbot#gpu-error .", fg=typer.colors.RED)
 
             config_parser = utils.callback_config()
             colab_path = Path(utils.current_config(
