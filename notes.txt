@@ -121,6 +121,12 @@ timeline
     
     run tests
   
+  the following error could have easily been overcome by hinting "dirs_exist_ok" in shutil
+    FileExistsError: [WinError 183] Cannot create a file when that file already exists: 'C:\\Users\\1seba\\AppData\\Roaming\\mimicbot\\data\\colab'
+  it seems as if huggingface restricts your user to a limited amount of simultaneous requests to huggingface
+    I was uploading a model while fetching for a from their in inference api and I got an internal server error
+
+
   CONTINUE IMPLEMENTING "ACTIVATE". LEFT OFF AFTER SETTING UP CLEAN_DF
     had to reorganize the context_window and context_length so that there would always be a context length used for the same purpose (determining context length)
     will need to add more ModelSave to make up for the environment variables
@@ -134,11 +140,14 @@ timeline
     create cli
     have cli run mimicbot
     create test
+
   deal with out of memory issues
   create a mimicbot-deploy repo
   create github ci/cd
   
   create train test
+  create activate test
+  create e2e test
 
 
   maybe modify num train epochs

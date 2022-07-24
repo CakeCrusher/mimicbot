@@ -8,6 +8,7 @@ from mimicbot import (
     DIR_ERROR,
     FILE_ERROR,
     API_KEY_ERROR,
+    GPU_ERROR,
     CHANGE_VALUE,
     config,
     utils,
@@ -25,6 +26,7 @@ import click
 import json
 import datetime
 from huggingface_hub import get_full_repo_name
+import shutil
 
 
 app = typer.Typer()
@@ -304,7 +306,51 @@ def train_model(
             typer.secho(
                 f"Error: Please change model name.\nYou may do so with the following command < python -m mimicbot set -mn MODEL_NAME_HERE >", fg=typer.colors.RED)
             raise typer.Exit(1)
+        elif (error == GPU_ERROR):
+            typer.secho(
+                f"Your GPU ran out of memory.\nAmong the many ways of going about solving this, here is a quick one: .", fg=typer.colors.RED)
 
+            config_parser = utils.callback_config()
+            colab_path = Path(utils.current_config(
+                "general", "data_path")) / "colab"
+            colab_path.mkdir(exist_ok=True)
+
+            # write .env in /DATA_PATH/colab/
+            HUGGINGFACE_API_KEY = utils.current_config(
+                "huggingface", "api_key")
+            MODEL_NAME = utils.current_config("huggingface", "model_name")
+            with open(str(colab_path / ".env"), "w") as f:
+                f.write(
+                    f"HUGGINGFACE_API_KEY={HUGGINGFACE_API_KEY}\nMODEL_NAME={MODEL_NAME}")
+
+            # copy training files and paste into /colab/
+            DATA_PATH = utils.current_config("general", "data_path")
+            GUILD = utils.current_config("discord", "guild")
+            SESSION = utils.current_config("general", "session")
+            path_to_training_data = Path(
+                DATA_PATH) / GUILD / SESSION / "training_data"
+            print(path_to_training_data)
+            print(colab_path)
+            shutil.copytree(str(path_to_training_data),
+                            str(colab_path), dirs_exist_ok=True)
+
+            # copy huggingface\README.md into /colab/
+            # get current directory
+            path_to_readme = Path(__file__).parent / \
+                "huggingface" / "README.md"
+            shutil.copy(str(path_to_readme), str(colab_path))
+
+            # create a model_save for future use
+            context_length = int(config_parser.get(
+                "training", "context_length"))
+            model_save = {
+                "url": f"https://huggingface.co/{get_full_repo_name(MODEL_NAME)}",
+                "context_length": context_length,
+                "data_path": str(session_path),
+            }
+            utils.add_model_save(session_path.parent.parent.parent, model_save)
+
+            raise typer.Exit(1)
         typer.secho(f"Error: {ERROR[error]}", fg=typer.colors.RED)
         raise typer.Exit(1)
     config_parser = utils.callback_config()
@@ -351,11 +397,21 @@ def activate_bot(
 @app.command(name="forge")
 def forge(
 ):
-    os.system("python -m mimicbot init")
-    os.system("python -m mimicbot mine --forge-pipeline")
-    os.system("python -m mimicbot preprocess --forge-pipeline")
-    os.system("python -m mimicbot train --forge-pipeline")
-    os.system("python -m mimicbot activate --forge-pipeline")
+    res = os.system("python -m mimicbot init")
+    if res != 0:
+        raise typer.Exit(1)
+    res = os.system("python -m mimicbot mine --forge-pipeline")
+    if res != 0:
+        raise typer.Exit(1)
+    res = os.system("python -m mimicbot preprocess --forge-pipeline")
+    if res != 0:
+        raise typer.Exit(1)
+    res = os.system("python -m mimicbot train --forge-pipeline")
+    if res != 0:
+        raise typer.Exit(1)
+    res = os.system("python -m mimicbot activate --forge-pipeline")
+    if res != 0:
+        raise typer.Exit(1)
 
 
 @app.command(name="env")
@@ -371,14 +427,17 @@ def generate_env():
     CONTEXT_LENGTH = model_save["context_length"]
     MODEL_ID = "/".join(model_save["url"].split("/")[-2:])
 
-    with open(".env", "w") as f:
+    # open a file under /etc/environment
+    deploy_path = Path(utils.current_config("general", "data_path")) / "deploy"
+    deploy_path.mkdir(exist_ok=True)
+    with open(str(deploy_path / ".env"), "w") as f:
         f.write(
-            f"""DISCORD_API_KEY={DISCORD_API_KEY}\nHUGGINGFACE_API_KEY={HUGGINGFACE_API_KEY}\nCONTEXT_LENGTH={CONTEXT_LENGTH}\nMODEL_ID={MODEL_ID}""")
+            f"DISCORD_API_KEY={DISCORD_API_KEY}\nHUGGINGFACE_API_KEY={HUGGINGFACE_API_KEY}\nCONTEXT_LENGTH={CONTEXT_LENGTH}\nMODEL_ID={MODEL_ID}")
 
     # get current directory with Path
-    current_dir = Path(__file__).parent / ".env"
+    env_path = deploy_path / ".env"
 
     typer.secho(
-        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully generated .env file it is located in this directory [{str(current_dir)}].",
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully generated .env file it is located in this directory [{str(env_path)}].",
         fg=typer.colors.GREEN
     )

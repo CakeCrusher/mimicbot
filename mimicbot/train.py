@@ -47,6 +47,7 @@ from mimicbot import (
     API_KEY_ERROR,
     CHANGE_VALUE,
     SUCCESS,
+    GPU_ERROR,
     Args,
 )
 
@@ -59,12 +60,13 @@ def train(session_path: Path) -> Tuple[str, int]:
     rouge_score = load_metric("rouge")
     logger = logging.getLogger(__name__)
     config_parser = utils.callback_config()
+    model_name = config_parser.get(
+        "huggingface", "model_name")
     HUGGINGFACE_API_KEY = config_parser.get("huggingface", "api_key")
     MODELS_PATH = session_path.parent.parent / "models"
     SESSION_PATH = session_path
     CACHE_DIR = MODELS_PATH / "cache"
-    MODEL_TO = get_full_repo_name(config_parser.get(
-        "huggingface", "model_name"), token=HUGGINGFACE_API_KEY)
+    MODEL_TO = get_full_repo_name(model_name, token=HUGGINGFACE_API_KEY)
 
     trn_df = pd.read_csv(str(SESSION_PATH / "training_data" / "train.csv"))
     val_df = pd.read_csv(str(SESSION_PATH / "training_data" / "test.csv"))
@@ -121,9 +123,9 @@ def train(session_path: Path) -> Tuple[str, int]:
                 repo_id=args.save_to,
                 token=HUGGINGFACE_API_KEY)
             tokenizer.push_to_hub(
-                args.model_path, commit_message="init tokenizer", token=HUGGINGFACE_API_KEY)
+                args.model_path, commit_message="init tokenizer", use_auth_token=HUGGINGFACE_API_KEY)
             model.push_to_hub(
-                args.model_path, commit_message="init model", token=HUGGINGFACE_API_KEY)
+                args.model_path, commit_message="init model", use_auth_token=HUGGINGFACE_API_KEY)
             typer.secho(
                 f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Huggingface repo initialized at: {link_to_repo}", fg=typer.colors.BLUE)
         except ValueError:
@@ -240,7 +242,7 @@ def train(session_path: Path) -> Tuple[str, int]:
         typer.secho(
             f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Uploading model to: https://huggingface.co/{args.save_to}", fg=typer.colors.BLUE)
         model.push_to_hub(
-            args.model_path, commit_message=f"model: {message}", token=HUGGINGFACE_API_KEY)
+            args.model_path, commit_message=f"model: {message}", use_auth_token=HUGGINGFACE_API_KEY)
         typer.secho(f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Uploading finished, view it at: https://huggingface.co/{args.save_to}", fg=typer.colors.BLUE)
         # tokenizer.push_to_hub(args.model_path, commit_message=f"tokenizer: {message}")
 
@@ -298,6 +300,8 @@ def train(session_path: Path) -> Tuple[str, int]:
 
     def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedTokenizer, saveToHub) -> Tuple[int, float]:
         """ Train the model """
+        gc.collect()
+        torch.cuda.empty_cache()
         if args.local_rank in [-1, 0]:
             if not (Path(args.output_dir) / "SummaryWriter-log").exists():
                 os.makedirs(Path(args.output_dir) / "SummaryWriter-log")
@@ -340,7 +344,7 @@ def train(session_path: Path) -> Tuple[str, int]:
                 nd in n for nd in no_decay)], "weight_decay": 0.0},
         ]
         optimizer = AdamW(optimizer_grouped_parameters,
-                          lr=args.learning_rate, eps=args.adam_epsilon)
+                          lr=args.learning_rate, eps=args.adam_epsilon, no_deprecation_warning=True)
         scheduler = get_linear_schedule_with_warmup(
             optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total
         )
@@ -421,7 +425,6 @@ def train(session_path: Path) -> Tuple[str, int]:
                             steps_trained_in_current_epoch)
             except ValueError:
                 logger.info("  Starting fine-tuning.")
-
         tr_loss, logging_loss = 0.0, 0.0
 
         model.zero_grad()
@@ -719,11 +722,8 @@ def train(session_path: Path) -> Tuple[str, int]:
     gc.collect()
     torch.cuda.empty_cache()
 
-    # TODO
-    args.num_train_epochs = 1
-    args.per_gpu_train_batch_size = 1
-    args.per_gpu_eval_batch_size = 1
-
-    main(trn_df, val_df, args, True)
-
+    try:
+        main(trn_df, val_df, args, True)
+    except RuntimeError:
+        return("", GPU_ERROR)
     return (f"https://huggingface.co/{args.save_to}", SUCCESS)

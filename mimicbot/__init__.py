@@ -12,8 +12,9 @@ __version__ = "0.0.1"
     MISSING_GUILD_ERROR,
     USER_NAME_ERROR,
     CHANGE_VALUE,
+    GPU_ERROR,
     ABORT,
-) = range(11)
+) = range(12)
 
 ERROR = {
     SUCCESS: "SUCCESS",
@@ -26,8 +27,10 @@ ERROR = {
     MISSING_GUILD_ERROR: "MISSING_GUILD_ERROR",
     USER_NAME_ERROR: "USER_NAME_ERROR",
     CHANGE_VALUE: "CHANGE_VALUE",
+    GPU_ERROR: "GPU_ERROR",
     ABORT: "ABORT",
 }
+
 
 class Args():
     def __init__(self):
@@ -39,7 +42,7 @@ class Args():
         self.config_name = "microsoft/DialoGPT-small"
         self.tokenizer_name = None
         self.save_to = None
-        self.repo = None 
+        self.repo = None
         self.cache_dir = None
         self.block_size = 512
         self.do_train = True
@@ -52,7 +55,7 @@ class Args():
         self.weight_decay = 0.0
         self.adam_epsilon = 1e-8
         self.max_grad_norm = 1.0
-        self.num_train_epochs = 3
+        self.num_train_epochs = 1
         self.max_steps = -1
         self.warmup_steps = 0
         self.logging_steps = 1000
