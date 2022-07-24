@@ -21,4 +21,4 @@ jobs:
           pip install -r requirements-dep.txt 
       - name: Tests
         run: |
-          pytest
+          pytest -v

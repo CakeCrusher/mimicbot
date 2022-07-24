@@ -52,15 +52,15 @@ def datetime_str():
     return datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
 
 
-def callback_config(callback: Callable[[configparser.ConfigParser], configparser.ConfigParser] | None = None, app_path: Path = APP_DIR_PATH) -> configparser.ConfigParser:
+def callback_config(app_path: Path = APP_DIR_PATH) -> configparser.ConfigParser:
     config = configparser.ConfigParser()
     config_path = app_path / "config.ini"
     try:
         config.read(str(config_path))
     except:
         raise FileNotFoundError
-    if callback:
-        config = callback(config)
+    # if callback:
+    #     config = callback(config)
     with open(str(config_path), "w") as config_file:
         config.write(config_file)
     return config
