@@ -16,6 +16,8 @@ Follow the steps listed in its README to deploy your bot.
 If you are still interested in deploying with this repository you can do so by either running `forge` on the server or passing the configuration files and data files to the appropriate paths on the server and then running `activate`.
 ## Todo
 - [ ] Incorporate github actions to run the pytest tests.
+- [ ] Add linting.
+  - [ ] github action.
 - [ ] Use [DiscordChatExporter](https://github.com/Tyrrrz/DiscordChatExporter) cli as the primary source of mining data to be able to capture dm data in addition to guild data. It also does not require admin access for guilds. The only catch is its security is yet to be determined.
 - [ ] Add testing
   - [ ] `activate` command unit tests
