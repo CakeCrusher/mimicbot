@@ -122,6 +122,8 @@ def train(session_path: Path) -> Tuple[str, int]:
                 path_in_repo="README.md",
                 repo_id=args.save_to,
                 token=HUGGINGFACE_API_KEY)
+            # config.push_to_hub(
+            #     args.model_path, commit_message="init config", use_auth_token=HUGGINGFACE_API_KEY)
             tokenizer.push_to_hub(
                 args.model_path, commit_message="init tokenizer", use_auth_token=HUGGINGFACE_API_KEY)
             model.push_to_hub(
@@ -243,8 +245,9 @@ def train(session_path: Path) -> Tuple[str, int]:
             f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Uploading model to: https://huggingface.co/{args.save_to}", fg=typer.colors.BLUE)
         model.push_to_hub(
             args.model_path, commit_message=f"model: {message}", use_auth_token=HUGGINGFACE_API_KEY)
+        # tokenizer.push_to_hub(
+        #     args.model_path, commit_message=f"tokenizer: {message}", use_auth_token=HUGGINGFACE_API_KEY)
         typer.secho(f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Uploading finished, view it at: https://huggingface.co/{args.save_to}", fg=typer.colors.BLUE)
-        # tokenizer.push_to_hub(args.model_path, commit_message=f"tokenizer: {message}")
 
     def load_and_cache_examples(args, tokenizer, df_trn, df_val, evaluate=False):
         return ConversationDataset(tokenizer, args, df_val if evaluate else df_trn)

@@ -114,6 +114,8 @@ def start_mimic(model_save: types.ModelSave):
                         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Waiting for model to load. Will take {time_to_load}s", fg=typer.colors.YELLOW)
                     await asyncio.sleep(time_to_load)
                     query_res = query(payload_text)
+                    typer.echo(
+                        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) {query_res}")
                     attempts += 1
                 response = query_res["generated_text"]
                 await channel.send(response)

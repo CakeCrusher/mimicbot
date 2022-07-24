@@ -94,7 +94,7 @@ def init(
         help="Name of the model to be uploaded or be fine-tuned huggingface.",
     )
 ) -> None:
-    """Initialize the mimicbot"""
+    """Initialize and set the config variables for mimicbot."""
 
     typer.echo(f"app_path: {app_path}")
     app_path = Path(app_path)
@@ -178,7 +178,7 @@ def set_config(
         help="Path to mimicbot data."
     ),
 ) -> None:
-    """Set the session name"""
+    """Set individual config variables."""
     app_path: Path = utils.ensure_app_path(Path(app_path))
     config_parser = configparser.ConfigParser()
     try:
@@ -210,7 +210,7 @@ def mine(
         help="Is running forge command.",
     ),
 ) -> None:
-    """Run the mimicbot"""
+    """Scrape all the message data from the discord server."""
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Begginging to mine data.", fg=typer.colors.BLUE)
     app_path: Path = utils.ensure_app_path(Path(app_path))
@@ -241,7 +241,7 @@ def preprocess_data(
         help="Is running forge command.",
     ),
 ) -> None:
-
+    """Preprocess the data such that it is in a standardized format. Then prepares the data for training."""
     while not session_path or not Path(session_path).exists():
         config_parser = utils.callback_config()
         session_path = utils.session_path(config_parser)
@@ -283,7 +283,7 @@ def train_model(
         help="Is running forge command.",
     ),
 ):
-
+    """Trains the model to immitate the user identified in the config."""
     while not session_path or not Path(session_path).exists():
         config_parser = utils.callback_config()
         session_path = utils.session_path(config_parser)
@@ -350,9 +350,17 @@ def train_model(
             }
             utils.add_model_save(session_path.parent.parent.parent, model_save)
 
-            raise typer.Exit(1)
         typer.secho(f"Error: {ERROR[error]}", fg=typer.colors.RED)
-        raise typer.Exit(1)
+        if forge_pipeline:
+            # create a confirmation prompt to delete the session data
+            if typer.confirm(
+                f"Colab notebook successfully finished training (continue forge)?", default=True
+            ):
+                raise typer.Exit(0)
+            else:
+                raise typer.Exit(1)
+        else:
+            raise typer.Exit(1)
     config_parser = utils.callback_config()
     context_length = int(config_parser.get("training", "context_length"))
     model_save = {
@@ -383,20 +391,20 @@ def activate_bot(
         help="Is running forge command.",
     ),
 ):
-    # create a multiple choice question
-    # ask the user to select the bot to activate
+    """Activates the discord bot with a trained mimicbot model."""
     config_parser = utils.callback_config()
     model_saves: list[types.ModelSave] = json.loads(
         config_parser.get("huggingface", "model_saves"))
     model_idx = utils.prompt_model_save()
     model_save = model_saves[model_idx]
     print(model_save)
-    # start_mimic(model_save)
+    start_mimic(model_save)
 
 
 @app.command(name="forge")
 def forge(
 ):
+    """All encompassing command to produce a bot from scratch."""
     res = os.system("python -m mimicbot init")
     if res != 0:
         raise typer.Exit(1)
@@ -414,8 +422,9 @@ def forge(
         raise typer.Exit(1)
 
 
-@app.command(name="env")
-def generate_env():
+@app.command(name="poduction_env")
+def generate_poduction_env():
+    """Generated an environement file for production."""
     config_parser = utils.callback_config()
     model_saves: list[types.ModelSave] = json.loads(
         config_parser.get("huggingface", "model_saves"))
@@ -441,3 +450,22 @@ def generate_env():
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully generated .env file it is located in this directory [{str(env_path)}].",
         fg=typer.colors.GREEN
     )
+
+
+@app.command(name="config")
+def get_config(
+    app_path: str = typer.Option(
+        str(utils.APP_DIR_PATH),
+        "--app-path",
+        "-ap",
+        help="Path to the app directory.",
+    ),
+):
+    """Print the current config."""
+    config_path = Path(app_path) / "config.ini"
+    # print the content inside config_path
+    with open(str(config_path), "r") as f:
+        print(f.read())
+    typer.secho(
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully printed the config above.",
+        fg=typer.colors.GREEN)
