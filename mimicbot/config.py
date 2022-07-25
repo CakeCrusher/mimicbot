@@ -55,7 +55,8 @@ def discord_config(app_path: Path, api_key: str, guild: str, target_user: str):
         config.read(str(app_path / "config.ini"))
     except:
         pass
-    config.add_section("discord")
+    if not config.has_section("discord"):
+        config.add_section("discord")
     config.set("discord", "api_key", api_key)
     config.set("discord", "guild", guild)
     config.set("discord", "target_user", target_user)
@@ -84,7 +85,8 @@ def training_config(app_path: Path, context_window: str, context_length: str, te
         config.read(str(app_path / "config.ini"))
     except:
         pass
-    config.add_section("training")
+    if not config.has_section("training"):
+        config.add_section("training")
     config.set("training", "context_window", context_window)
     config.set("training", "context_length", context_length)
     config.set("training", "test_perc", test_perc)

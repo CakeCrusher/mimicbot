@@ -88,7 +88,7 @@ class TestInit:
         app_path = tmp_path / "mimicbot"
         config.init_app(app_path)
         result = runner.invoke(cli.app, ["init", "--app-path", app_path], input="n\n")
-        assert f"Config already exists in [{str(tmp_path)}]" in result.stdout
+        assert f"Config already exists in [{str(app_path)}]" in result.stdout
         assert "Aborted!" in result.stdout
 
     def test_create_file(self, tmp_path, session, data_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key, huggingface_model_name, context_length, context_window, test_perc):
