@@ -85,56 +85,57 @@ class TestInit:
     #     assert f"Session name" in result.stdout
     #     assert "Aborted!" in result.stdout
     def test_no_override(self, tmp_path, session, data_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key, huggingface_model_name, context_length, context_window, test_perc):
-        config.init_app(tmp_path)
-        result = runner.invoke(cli.app, ["init", "--app-path", tmp_path], input="n\n")
+        app_path = tmp_path / "mimicbot"
+        config.init_app(app_path)
+        result = runner.invoke(cli.app, ["init", "--app-path", app_path], input="n\n")
         assert f"Config already exists in [{str(tmp_path)}]" in result.stdout
         assert "Aborted!" in result.stdout
 
-    # def test_create_file(self, tmp_path, session, data_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key, huggingface_model_name, context_length, context_window, test_perc):
-    #     app_path = tmp_path / "mimicbot"
-    #     data_path = app_path / "data"
-    #     config_path = app_path / "config.ini"
-    #     print("!!SESSION:", session)
+    def test_create_file(self, tmp_path, session, data_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key, huggingface_model_name, context_length, context_window, test_perc):
+        app_path = tmp_path / "mimicbot"
+        data_path = app_path / "data"
+        config_path = app_path / "config.ini"
+        print("!!SESSION:", session)
 
-    #     result = runner.invoke(
-    #         cli.app, ["init", "--app-path", str(app_path)],
-    #         input=f"{str(session)}\n\n{discord_api_key}\n{discord_guild}\n{discord_target_user}\n{huggingface_api_key}\n{huggingface_model_name}\ny\n"
-    #     )
+        result = runner.invoke(
+            cli.app, ["init", "--app-path", str(app_path)],
+            input=f"{str(session)}\n\n{discord_api_key}\n{discord_guild}\n{discord_target_user}\n{huggingface_api_key}\n{huggingface_model_name}\ny\n"
+        )
 
-    #     file_success_assertions(result, config_path,
-    #                             session, discord_api_key, huggingface_api_key, False)
+        file_success_assertions(result, config_path,
+                                session, discord_api_key, huggingface_api_key, False)
 
-    # def test_create_file_with_training(self, tmp_path, session, data_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key, huggingface_model_name, context_length, context_window, test_perc):
-    #     app_path = tmp_path / "mimicbot"
-    #     data_path = app_path / "data"
-    #     config_path = app_path / "config.ini"
+    def test_create_file_with_training(self, tmp_path, session, data_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key, huggingface_model_name, context_length, context_window, test_perc):
+        app_path = tmp_path / "mimicbot"
+        data_path = app_path / "data"
+        config_path = app_path / "config.ini"
 
-    #     result = runner.invoke(
-    #         cli.app, ["init", "--app-path", str(app_path)],
-    #         input=f"{str(session)}\n\n{discord_api_key}\n{discord_guild}\n{discord_target_user}\n{huggingface_api_key}\n{huggingface_model_name}\nn\ny\n{context_length}\n{context_window}\n{test_perc}\n"
-    #     )
+        result = runner.invoke(
+            cli.app, ["init", "--app-path", str(app_path)],
+            input=f"{str(session)}\n\n{discord_api_key}\n{discord_guild}\n{discord_target_user}\n{huggingface_api_key}\n{huggingface_model_name}\nn\ny\n{context_length}\n{context_window}\n{test_perc}\n"
+        )
 
-    #     file_success_assertions(result, config_path,
-    #                             session, discord_api_key, huggingface_api_key, context_length)
+        file_success_assertions(result, config_path,
+                                session, discord_api_key, huggingface_api_key, context_length)
 
-    # def test_create_file_forced(self, tmp_path, session, data_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key, huggingface_model_name, context_length, context_window, test_perc):
-    #     app_path = tmp_path / "mimicbot"
-    #     data_path = app_path / "data"
-    #     config_path = app_path / "config.ini"
+    def test_create_file_forced(self, tmp_path, session, data_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key, huggingface_model_name, context_length, context_window, test_perc):
+        app_path = tmp_path / "mimicbot"
+        data_path = app_path / "data"
+        config_path = app_path / "config.ini"
 
-    #     result = runner.invoke(
-    #         cli.app, [
-    #             "init",
-    #             "--app-path", str(app_path),
-    #             "--data-path", str(data_path),
-    #             "--session", session,
-    #             "--discord-api-key", discord_api_key,
-    #             "--discord-guild", discord_guild,
-    #             "--discord-target-user", discord_target_user,
-    #             "--huggingface-api-key", huggingface_api_key,
-    #             "--huggingface-model-name", huggingface_model_name,
-    #         ]
-    #     )
+        result = runner.invoke(
+            cli.app, [
+                "init",
+                "--app-path", str(app_path),
+                "--data-path", str(data_path),
+                "--session", session,
+                "--discord-api-key", discord_api_key,
+                "--discord-guild", discord_guild,
+                "--discord-target-user", discord_target_user,
+                "--huggingface-api-key", huggingface_api_key,
+                "--huggingface-model-name", huggingface_model_name,
+            ]
+        )
 
-    #     file_success_assertions(result, config_path,
-    #                             session, discord_api_key, huggingface_api_key, False)
+        file_success_assertions(result, config_path,
+                                session, discord_api_key, huggingface_api_key, False)
