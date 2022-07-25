@@ -5,6 +5,7 @@ from mimicbot import (
     __app_name__,
     cli,
     utils,
+    config,
 )
 import typer
 from typer.testing import CliRunner, Result
@@ -78,10 +79,15 @@ def file_success_assertions(
     ]
 )
 class TestInit:
-    def test_abort(self, session, data_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key, huggingface_model_name, context_length, context_window, test_perc):
-        result = runner.invoke(cli.app, ["init"])
-        app_path = Path(typer.get_app_dir(__app_name__))
-        assert f"Path to store data [{str(app_path)}]" in result.stdout or f"[{str(app_path)}] config already exists." in result.stdout
+    # def test_abort(self, tmp_path, session, data_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key, huggingface_model_name, context_length, context_window, test_perc):
+    #     # TODO: must figure out how to abort thr program without "\n"
+    #     result = runner.invoke(cli.app, ["init", "--app-path", tmp_path], input="\x03")
+    #     assert f"Session name" in result.stdout
+    #     assert "Aborted!" in result.stdout
+    def test_no_override(self, tmp_path, session, data_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key, huggingface_model_name, context_length, context_window, test_perc):
+        config.init_app(tmp_path)
+        result = runner.invoke(cli.app, ["init", "--app-path", tmp_path], input="n\n")
+        assert f"Config already exists in [{str(tmp_path)}]" in result.stdout
         assert "Aborted!" in result.stdout
 
     # def test_create_file(self, tmp_path, session, data_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key, huggingface_model_name, context_length, context_window, test_perc):

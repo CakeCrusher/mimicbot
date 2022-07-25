@@ -33,10 +33,11 @@ def app_path_verifier(app_path_str: str) -> None:
     if not type(app_path_str) == str:
         return config.APP_DIR_PATH
     app_path = Path(app_path_str)
-    if app_path.exists():
+    if (app_path / "config.ini").exists():
+        typer.secho(f"App path: {app_path}", fg=typer.colors.YELLOW)
         typer.confirm(
             typer.style(
-                f"\n[{app_path_str}] config already exists. Do you want to overwrite it?\n", fg=typer.colors.YELLOW),
+                f"\nConfig already exists in [{app_path_str}] . Do you want to overwrite it?\n", fg=typer.colors.YELLOW),
             False,
             abort=True,
         )
