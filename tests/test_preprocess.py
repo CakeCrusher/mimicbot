@@ -66,24 +66,24 @@ class TestPreprocess:
         # ensure there are only 3 lines in trin_path
         assert len(train_path.read_text().split("\n")) == 4
 
-    # def test_extrapolated_preprocess(self, mock_config_path_and_data):
-    #     parsed_config = ConfigParser()
-    #     parsed_config.read(str(mock_config_path_and_data[0]))
-    #     parsed_config.set("discord", "target_user", "SomeUser")
-    #     parsed_config.set("training", "context_window", "6")
-    #     parsed_config.set("training", "context_length", "2")
-    #     parsed_config.set("training", "test_perc", "0.1")
-    #     with open(str(mock_config_path_and_data[0]), "w") as config_file:
-    #         parsed_config.write(config_file)
-    #     runner = CliRunner()
-    #     result = runner.invoke(
-    #         cli.app, ["preprocess", "--session-path", mock_config_path_and_data[1]])
+    def test_extrapolated_preprocess(self, mock_config_path_and_data):
+        parsed_config = ConfigParser()
+        parsed_config.read(str(mock_config_path_and_data[0]))
+        parsed_config.set("discord", "target_user", "SomeUser")
+        parsed_config.set("training", "context_window", "6")
+        parsed_config.set("training", "context_length", "2")
+        parsed_config.set("training", "test_perc", "0.1")
+        with open(str(mock_config_path_and_data[0]), "w") as config_file:
+            parsed_config.write(config_file)
+        runner = CliRunner()
+        result = runner.invoke(
+            cli.app, ["preprocess", "--session-path", mock_config_path_and_data[1]])
 
-    #     train_path = mock_config_path_and_data[1] / \
-    #         "training_data" / "train.csv"
+        train_path = mock_config_path_and_data[1] / \
+            "training_data" / "train.csv"
 
-    #     assert "Data is ready for training. You can find it here" in result.stdout
-    #     assert result.exit_code == 0
-    #     assert train_path.exists()
-    #     # ensure there are only 3 lines in trin_path
-    #     assert len(train_path.read_text().split("\n")) == 32
+        assert "Data is ready for training. You can find it here" in result.stdout
+        assert result.exit_code == 0
+        assert train_path.exists()
+        # ensure there are only 3 lines in trin_path
+        assert len(train_path.read_text().split("\n")) == 32
