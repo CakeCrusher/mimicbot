@@ -109,7 +109,7 @@ def prompt_model_save() -> int:
     model_idx = ""
     while type(model_idx) != int:
         model_idx = typer.prompt(
-            "\nModel to run bot on:\n" + models_string + "Enter numberof model",
+            "\nModel to run bot on:\n" + models_string + "Enter number of model",
             default=f"0",
         )
         try:

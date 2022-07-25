@@ -117,7 +117,12 @@ def start_mimic(model_save: types.ModelSave):
                     typer.echo(
                         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) {query_res}")
                     attempts += 1
-                response = query_res["generated_text"]
-                await channel.send(response)
+                if attempts > 3:
+                    typer.secho(
+                        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Model failed to load. Please try again later.", fg=typer.colors.RED)
+                    await channel.send("🤖(failed to load, please try again later)")
+                else:
+                    response = query_res["generated_text"]
+                    await channel.send(response)
 
     bot.run(MIMICBOT_TOKEN)

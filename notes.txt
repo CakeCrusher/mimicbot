@@ -144,6 +144,7 @@ timeline
   deal with out of memory issues
   create a mimicbot-deploy repo
   create github ci/cd
+    after navigating the errors my commit history has become a mess
   
   create train test
   create activate test

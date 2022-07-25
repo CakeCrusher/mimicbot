@@ -61,7 +61,7 @@ def init(
         utils.current_config("discord", "api_key"),
         "--discord-api-key",
         "-dak",
-        prompt="\nGuide to creating discord bot and retrieving the API key: (https://youtube.com/)\nEnter your Discord API key",
+        prompt="\nGuide to setting up the discord bot and retrieving the API key: https://github.com/CakeCrusher/mimicbot#gpu-error \nEnter your Discord API key",
         help="API key for the discord bot.",
     ),
     discord_guild: str = typer.Option(
@@ -82,7 +82,7 @@ def init(
         utils.current_config("huggingface", "api_key"),
         "--huggingface-api-key",
         "-hak",
-        prompt="\nGuide to retrieving huggingface API key: (https://youtube.com/)\nEnter your huggingface API key",
+        prompt="\nGuide to retrieving huggingface API key: https://github.com/CakeCrusher/mimicbot#gpu-error \nEnter your huggingface API key",
         help="Huggingface's write key to upload models to your account.",
     ),
     huggingface_model_name: str = typer.Option(
