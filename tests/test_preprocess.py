@@ -13,9 +13,6 @@ from pathlib import Path
 import os
 import pdb
 
-default_path = Path(config.APP_DIR_PATH)
-default_config = default_path / "config.ini"
-
 raw_messages_str = """author_id,content,timestamp,channel
 111111111111111111,8...,2022-07-06 00:35:18.108,test
 111111111111111111,7...,2022-07-01 01:40:39.608,test
@@ -35,10 +32,8 @@ members_str = """id,name
 def mock_config_path_and_data(tmp_path) -> Tuple[Path, Path]:
     tmp_config_path = tmp_path / "config.ini"
     config.init_app(tmp_path)
-    # copy a file from path default_config and paste it to tmp_config_path
-    tmp_config_path.write_text(default_config.read_text())
-    # transform raw_messages_str into a csv file
 
+    # transform raw_messages_str into a csv file
     tmp_session_path = tmp_path / "data" / "test_server" / "test_session"
     if not tmp_session_path.exists():
         os.makedirs(str(tmp_session_path))
