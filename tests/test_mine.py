@@ -9,16 +9,16 @@ from typer.testing import CliRunner, Result
 from configparser import ConfigParser
 from pathlib import Path 
 
-# default_path = Path(config.APP_DIR_PATH)
-# default_config = default_path / "config.ini"
+default_path = Path(config.APP_DIR_PATH)
+default_config = default_path / "config.ini"
 
-# @pytest.fixture
-# def mock_config_path(tmp_path):
-#     tmp_config_path = tmp_path / "config.ini"
-#     config.init_app(tmp_path)
-#     # copy a file from path default_config and paste it to tmp_config_path
-#     tmp_config_path.write_text(default_config.read_text())
-#     return tmp_config_path
+@pytest.fixture
+def mock_config_path(tmp_path):
+    tmp_config_path = tmp_path / "config.ini"
+    config.init_app(tmp_path)
+    # copy a file from path default_config and paste it to tmp_config_path
+    tmp_config_path.write_text(default_config.read_text())
+    return tmp_config_path
 
 
 class TestMine:
