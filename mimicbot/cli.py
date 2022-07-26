@@ -311,8 +311,7 @@ def train_model(
                 f"Your GPU ran out of memory.\nAmong the many ways of going about solving this, here is a quick one: https://github.com/CakeCrusher/mimicbot#gpu-error .", fg=typer.colors.RED)
 
             config_parser = utils.callback_config()
-            colab_path = Path(utils.current_config(
-                "general", "data_path")) / "colab"
+            colab_path = Path(utils.session_path(config_parser)) / "colab"
             colab_path.mkdir(exist_ok=True)
 
             # write .env in /DATA_PATH/colab/
@@ -395,9 +394,10 @@ def activate_bot(
     config_parser = utils.callback_config()
     model_saves: list[types.ModelSave] = json.loads(
         config_parser.get("huggingface", "model_saves"))
-    model_idx = utils.prompt_model_save()
+    model_idx = 0
+    if not forge_pipeline:
+        model_idx = utils.prompt_model_save()
     model_save = model_saves[model_idx]
-    print(model_save)
     start_mimic(model_save)
 
 
@@ -437,7 +437,8 @@ def generate_poduction_env():
     MODEL_ID = "/".join(model_save["url"].split("/")[-2:])
 
     # open a file under /etc/environment
-    deploy_path = Path(utils.current_config("general", "data_path")) / "deploy"
+
+    deploy_path = Path(utils.session_path(config_parser)) / "deploy"
     deploy_path.mkdir(exist_ok=True)
     with open(str(deploy_path / ".env"), "w") as f:
         f.write(
