@@ -131,6 +131,8 @@ timeline
     had to reorganize the context_window and context_length so that there would always be a context length used for the same purpose (determining context length)
     will need to add more ModelSave to make up for the environment variables
 
+  I was using the deprecated VSC extesion Python-autopep8 and it replaced entire files
+
   initialize mimicbot
     create cli
     have cli run discord.bot

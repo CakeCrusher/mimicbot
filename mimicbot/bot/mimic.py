@@ -123,6 +123,11 @@ def start_mimic(model_save: types.ModelSave):
                     await channel.send("🤖(failed to load, please try again later)")
                 else:
                     response = query_res["generated_text"]
-                    await channel.send(response)
+                    try:
+                        await channel.send(response)
+                    except discord.errors.HTTPException:
+                        typer.secho(
+                            f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) HTTPException error.", fg=typer.colors.YELLOW)
+                        await channel.send("...")
 
     bot.run(MIMICBOT_TOKEN)

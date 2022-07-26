@@ -9,10 +9,11 @@ from mimicbot import (
 import typer
 from typer.testing import CliRunner, Result
 from configparser import ConfigParser
-from pathlib import Path 
+from pathlib import Path
 
 default_path = Path(config.APP_DIR_PATH)
 default_config = default_path / "config.ini"
+
 
 @pytest.fixture
 def mock_config_path(tmp_path):
@@ -31,13 +32,15 @@ class TestMine:
         runner = CliRunner()
         result = runner.invoke(cli.app, ["mine", "-ap", tmp_path])
 
-        data_path = tmp_path / "data" / parsed_config.get("discord", "guild") / parsed_config.get("general", "session")
+        data_path = tmp_path / "data" / \
+            parsed_config.get("discord", "guild") / \
+            parsed_config.get("general", "session")
         messages_path = data_path / "raw_messages.csv"
 
         assert "Successfully mined data." in result.stdout
         assert result.exit_code == 0
         assert messages_path.exists()
-    
+
     # def test_failed_mine_api_key(self, mock_config_path, tmp_path):
     #     parsed_config = ConfigParser()
     #     parsed_config.read(str(mock_config_path))

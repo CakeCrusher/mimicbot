@@ -103,7 +103,7 @@ def init(
     config.discord_config(app_path, discord_api_key,
                           discord_guild, discord_target_user)
     config.huggingface_config(
-        app_path, huggingface_api_key, huggingface_model_name, "[]")
+        app_path, huggingface_api_key, huggingface_model_name, utils.current_config("huggingface", "model_saves", "[]"))
 
     reccomended_settings = typer.confirm(
         "\nUse reccommended training settings?", default=True)
