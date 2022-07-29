@@ -249,6 +249,8 @@ def preprocess_data(
             session_path = typer.prompt(
                 f"\nEnter the path to the session data", default=str(session_path)
             )
+        print("session_path", session_path)
+        print("Path(session_path).exists()", Path(session_path).exists())
 
     session_path = Path(session_path)
     clean_data_path, error = data_preprocessing.clean_messages(session_path)

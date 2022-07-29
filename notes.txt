@@ -156,3 +156,20 @@ timeline
   maybe modify num train epochs
   configure github actions
   
+testing
+  make sure of right directory to run req.txt
+  no cuda pytorch download
+  describe purpose of path
+  communicate youre building a dev account
+  2FA code on reset token
+  "want to both" typo
+  running from mini guide to miniguide
+  create awrite token if it does not exist
+  "provide to mimicbot" CLI
+  forgot to continue to with forge process
+  "add the token BUT FINISH THIS GUIDE FIRST"
+  "guild" is unfamiliar
+  username without numbers
+  ignore mine bot close
+  add step numbers
+  add info on what forge is doing
