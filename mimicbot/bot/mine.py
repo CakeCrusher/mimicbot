@@ -19,7 +19,8 @@ def data_mine(config_path: Path) -> Tuple[Path, int]:
     SESSION_NAME = config.get("general", "session")
     DISCORD_API_KEY = config.get("discord", "api_key")
     app_path = config_path.parent
-    GUILD_DATA_PATH = app_path / "data" / GUILD / SESSION_NAME
+    DATA_PATH = Path(config.get("general", "data_path"))
+    GUILD_DATA_PATH = DATA_PATH / GUILD / SESSION_NAME
     # print("Starting DataMiner")
 
     intents = discord.Intents.default()
@@ -69,10 +70,7 @@ def data_mine(config_path: Path) -> Tuple[Path, int]:
             messages_data = messages_data + messages_for_channel
 
         # create a directory for session
-        if not GUILD_DATA_PATH.exists():
-            os.makedirs(str(GUILD_DATA_PATH))
-        # Path make dirs
-        # GUILD_DATA_PATH.mkdir(exist_ok=True)
+        GUILD_DATA_PATH.mkdir(parents=True, exist_ok=True)
 
         # write to csv
         messages_df = pd.DataFrame(

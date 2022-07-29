@@ -8,6 +8,7 @@ from mimicbot import (
     DIR_ERROR,
     FILE_ERROR,
     API_KEY_ERROR,
+    MISSING_GUILD_ERROR,
     GPU_ERROR,
     CHANGE_VALUE,
     config,
@@ -98,7 +99,7 @@ def init(
 
     typer.echo(f"app_path: {app_path}")
     app_path = Path(app_path)
-    config.init_app(app_path)
+    config.init_app(app_path, Path(data_path))
     config.general_config(app_path, data_path, session)
     config.discord_config(app_path, discord_api_key,
                           discord_guild, discord_target_user)
@@ -201,7 +202,7 @@ def mine(
         str(config.APP_DIR_PATH),
         "--app-path",
         "-ap",
-        help="Path to mimicbot data."
+        help="Path to mimicbot config."
     ),
     forge_pipeline: bool = typer.Option(
         False,
@@ -217,7 +218,10 @@ def mine(
 
     data_path, error = data_mine(app_path / "config.ini")
     if error:
-        typer.secho(f"Error: {ERROR[error]}", fg=typer.colors.RED)
+        if error == MISSING_GUILD_ERROR :
+            typer.secho(f"Error: Please make sure your bot is connected to the server", fg=typer.colors.RED)
+        else:
+            typer.secho(f"Error: {ERROR[error]}", fg=typer.colors.RED)
         raise typer.Exit(1)
 
     typer.secho(
@@ -228,6 +232,12 @@ def mine(
 
 @app.command(name="preprocess")
 def preprocess_data(
+    app_path: str = typer.Option(
+        str(config.APP_DIR_PATH),
+        "--app-path",
+        "-ap",
+        help="Path to mimicbot config."
+    ),
     session_path: str = typer.Option(
         None,
         "--session-path",
@@ -259,7 +269,7 @@ def preprocess_data(
         raise typer.Exit(1)
 
     packaged_data_for_training, error = data_preprocessing.package_data_for_training(
-        clean_data_path)
+        clean_data_path, Path(app_path))
     if error:
         typer.secho(f"Error: {ERROR[error]}", fg=typer.colors.RED)
         raise typer.Exit(1)
@@ -272,6 +282,12 @@ def preprocess_data(
 
 @app.command(name="train")
 def train_model(
+    app_path: str = typer.Option(
+        str(config.APP_DIR_PATH),
+        "--app-path",
+        "-ap",
+        help="Path to mimicbot config."
+    ),
     session_path: str = typer.Option(
         None,
         "--session-path",
@@ -286,6 +302,8 @@ def train_model(
     ),
 ):
     """Trains the model to immitate the user identified in the config."""
+    
+    app_path = Path(app_path)
     while not session_path or not Path(session_path).exists():
         config_parser = utils.callback_config()
         session_path = utils.session_path(config_parser)
@@ -349,7 +367,7 @@ def train_model(
                 "context_length": context_length,
                 "data_path": str(session_path),
             }
-            utils.add_model_save(session_path.parent.parent.parent, model_save)
+            utils.add_model_save(app_path, model_save)
 
         typer.secho(f"Error: {ERROR[error]}", fg=typer.colors.RED)
         if forge_pipeline:
@@ -369,7 +387,7 @@ def train_model(
         "context_length": context_length,
         "data_path": str(session_path),
     }
-    utils.add_model_save(session_path.parent.parent.parent, model_save)
+    utils.add_model_save(app_path, model_save)
 
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully trained and saved the model. You can find it here [{str(res)}]",

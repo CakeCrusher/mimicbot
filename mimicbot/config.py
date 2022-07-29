@@ -9,13 +9,13 @@ APP_DIR_PATH = Path(typer.get_app_dir(__app_name__))
 CONFIG_DIR_PATH = APP_DIR_PATH / "config.ini"
 
 
-def init_app(app_path: Path = str(APP_DIR_PATH)):
+def init_app(app_path: Path = str(APP_DIR_PATH), data_path: Path = APP_DIR_PATH / "data"):
     try:
         app_path.mkdir(exist_ok=True)
     except OSError:
         return DIR_ERROR
     init_config(app_path)
-    init_data(app_path)
+    init_data(data_path)
 
 
 def init_config(app_path: Path = APP_DIR_PATH):
@@ -29,10 +29,9 @@ def init_config(app_path: Path = APP_DIR_PATH):
         return FILE_ERROR
 
 
-def init_data(app_path: Path = APP_DIR_PATH):
+def init_data(data_path: Path = APP_DIR_PATH / "data"):
     try:
-        data_path = app_path / "data"
-        data_path.mkdir(exist_ok=True)
+        data_path.mkdir(parents=True, exist_ok=True)
     except OSError:
         return DIR_ERROR
 

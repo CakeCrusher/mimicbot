@@ -7,7 +7,7 @@ import os
 import typer
 import numpy as np
 
-from mimicbot import (SUCCESS, DIR_ERROR, USER_NAME_ERROR)
+from mimicbot import (SUCCESS, DIR_ERROR, USER_NAME_ERROR, config)
 
 
 def clean_df(raw_messages_df: pd.DataFrame, members_df: pd.DataFrame) -> pd.DataFrame:
@@ -111,16 +111,16 @@ def clean_messages(data_path: Path) -> Path:
     return (data_path / "cleaned_messages.csv", SUCCESS)
 
 
-def package_data_for_training(cleaned_messages_path: Path) -> Path:
-    config = ConfigParser()
-    config.read(cleaned_messages_path.parent.parent.parent.parent / "config.ini")
-
-    GUILD = config.get("discord", "guild")
-    SESSION_NAME = config.get("general", "session")
-    AUTHOR_NAME = config.get("discord", "target_user")
-    AMT_OF_CONTEXT = int(config.get("training", "context_length"))
-    TEST_PERC = float(config.get("training", "test_perc"))
-    CONTEXT_WINDOW = config.get("training", "context_window")
+def package_data_for_training(cleaned_messages_path: Path, app_path: Path = config.APP_DIR_PATH) -> Path:
+    config_parser = ConfigParser()
+    config_parser.read(app_path / "config.ini")
+    print("cleaned_messages_path", cleaned_messages_path)
+    GUILD = config_parser.get("discord", "guild")
+    SESSION_NAME = config_parser.get("general", "session")
+    AUTHOR_NAME = config_parser.get("discord", "target_user")
+    AMT_OF_CONTEXT = int(config_parser.get("training", "context_length"))
+    TEST_PERC = float(config_parser.get("training", "test_perc"))
+    CONTEXT_WINDOW = config_parser.get("training", "context_window")
     cleaned_messages = pd.read_csv(cleaned_messages_path)
 
     members_df = pd.read_csv(cleaned_messages_path.parent / "members.csv")
