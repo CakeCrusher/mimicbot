@@ -31,12 +31,12 @@ members_str = """id,name
 @pytest.fixture
 def mock_config_path_and_data(tmp_path) -> Tuple[Path, Path]:
     tmp_config_path = tmp_path / "config.ini"
-    config.init_app(tmp_path)
+    data_path = tmp_path / "data"
+    config.init_app(tmp_path, data_path)
 
     # transform raw_messages_str into a csv file
-    tmp_session_path = tmp_path / "data" / "test_server" / "test_session"
-    if not tmp_session_path.exists():
-        os.makedirs(str(tmp_session_path))
+    tmp_session_path = data_path / "test_server" / "test_session"
+    tmp_session_path.mkdir(parents=True, exist_ok=True)
     (tmp_session_path / "raw_messages.csv").write_text(raw_messages_str)
     (tmp_session_path / "members.csv").write_text(members_str)
     return (tmp_config_path, tmp_session_path)
@@ -45,6 +45,7 @@ def mock_config_path_and_data(tmp_path) -> Tuple[Path, Path]:
 class TestPreprocess:
     # Must have an initialized mimicbot config to the default parameters
     def test_standard_preprocess(self, mock_config_path_and_data):
+        app_path = mock_config_path_and_data[0].parent
         parsed_config = ConfigParser()
         parsed_config.read(str(mock_config_path_and_data[0]))
         parsed_config.set("discord", "target_user", "SomeUser")
@@ -55,7 +56,7 @@ class TestPreprocess:
             parsed_config.write(config_file)
         runner = CliRunner()
         result = runner.invoke(
-            cli.app, ["preprocess", "--session-path", mock_config_path_and_data[1]])
+            cli.app, ["preprocess", "--session-path", mock_config_path_and_data[1], "--app-path", app_path])
 
         train_path = mock_config_path_and_data[1] / \
             "training_data" / "train.csv"
@@ -67,6 +68,7 @@ class TestPreprocess:
         assert len(train_path.read_text().split("\n")) == 4
 
     def test_extrapolated_preprocess(self, mock_config_path_and_data):
+        app_path = mock_config_path_and_data[0].parent
         parsed_config = ConfigParser()
         parsed_config.read(str(mock_config_path_and_data[0]))
         parsed_config.set("discord", "target_user", "SomeUser")
@@ -77,7 +79,7 @@ class TestPreprocess:
             parsed_config.write(config_file)
         runner = CliRunner()
         result = runner.invoke(
-            cli.app, ["preprocess", "--session-path", mock_config_path_and_data[1]])
+            cli.app, ["preprocess", "--session-path", mock_config_path_and_data[1], "--app-path", app_path])
 
         train_path = mock_config_path_and_data[1] / \
             "training_data" / "train.csv"
