@@ -8,7 +8,7 @@ Mimicbot is a pipeline that is currently intended for use exclusively in the Dis
 ## Quickstart
 To get started follow the steps below:
 1. Clone the repository `git clone https://github.com/CakeCrusher/mimicbot.git`
-2. Install the dependencies `pip install -r requirements.txt`. (WARNING: the dependencies will consume a lot of space. If you have an environment with pytorch already installed it is advisable that you use that environment.)
+2. Install the dependencies `pip install -r requirements.txt`. If you have [CUDA](https://developer.nvidia.com/cuda-downloads) installed use  `pip install -r requirements-gpu.txt` instead. (WARNING: the dependencies will consume a lot of space. If you have an environment with pytorch already installed it is advisable that you use that environment.)
 3. Run the command `python -m mimicbot forge`. This command will guide you through the creation of the bot from start to finish.
  
  
