@@ -1,9 +1,11 @@
 # mimicbot 🤖
  
- 
 ## About
-Mimicbot is a pipeline that is currently intended for use exclusively in the Discord platform. Mimicbot allows for an effortless yet modular creation of an AI chat bot modeled to imitate a user in the discord channel. It consists of a pipeline that creates the bot from scratch.
+Mimicbot is a pipeline that is currently intended for use exclusively in the Discord platform. Mimicbot enables the effortless yet modular creation of an AI chat bot modeled to imitate a user in the discord channel. For example if Shakespeare is in your channel and the mimicbot is based on him, mimicbot will adjust its responses to how Shakespeare would speak.
+It consists of a pipeline that creates the bot from scratch, along with multiple other commands to create the bot in a modular format
  
+## Important Commands
+Type `python -m mimicbot --help` to see a list of commands. Similarly you can use `python -m mimicbot <A_MIMICBOT_COMMAND> --help` to see details on a specific command.
  
 ## Quickstart
 To get started follow the steps below:
@@ -11,10 +13,9 @@ To get started follow the steps below:
 2. Navigate into the cloned directory `cd mimicbot`
 3. Install the dependencies `pip install -r requirements.txt`. If you have [CUDA](https://developer.nvidia.com/cuda-downloads) installed use  `pip install -r requirements-gpu.txt` instead. (WARNING: the dependencies will consume a lot of space. If you have an environment with pytorch already installed it is advisable that you use that environment.)
 4. Run the command `python -m mimicbot forge`. This command will guide you through the creation of the bot from start to finish.
+5. Once the mimicbot is activated on discord, you can interact with it by simply sending it a message as you would to the person it is imitating, with a `@<NAME_OF_MIMICBOT>` mention somewhere in the text. The mimicbot will then reply with a message similar to how the original user would have said it.
  
  
-## Commands
-Type `python -m mimicbot --help` to see a list of commands. Similarly you can use `python -m mimicbot <command> --help` to see the help for a specific command.
 ## Deploy
 Although technically you could deploy your bot to any server using this repository it is not recommended primarily because of the heavy dependencies. Consequently, the [mimicbot-deploy](https://github.com/CakeCrusher/mimicbot-deploy) repository was built for ease of deployment.
 Follow the steps listed in its README to deploy your bot.
@@ -25,6 +26,9 @@ If you are still interested in deploying with this repository you can do so by e
 - [ ] Add linting.
   - [ ] github action.
 - [ ] Use [DiscordChatExporter](https://github.com/Tyrrrz/DiscordChatExporter) cli as the primary source of mining data to be able to capture dm data in addition to guild data. It also does not require admin access for guilds. The only catch is its security is yet to be determined.
+- [ ] More flexible with inputs
+  - [ ] Target user input
+  - [ ] Guild channel names
 - [ ] Create a public server for running through the pipeline and adding deploying the bot. Will work by simply downloading the bot and commanding it to copy a user, then wait a couple minutes and BAM! It's mimicing.
 - [ ] Add testing
   - [ ] `activate` command unit tests
@@ -43,12 +47,14 @@ If you are running `mimicbot forge` on the CLI make sure to complete this guide 
 5. Navigate to OAuth2 > URL Generator then check "bot" as the scope. Then check the "Read Messages/View Channels" general permission and "Send Messages" text permission. Finally, once all of those are checked copy the Generated URL. ![image](https://user-images.githubusercontent.com/37946988/180850821-8816d31f-307f-4a2d-afa1-270becf448e5.png)
 6. (You must be signed into your discord account on the browser) Simply navigate to the URL you copied, then select the server (you must have admin privileges) where you want to both: mine data and activate the bot. Click create. ![image](https://user-images.githubusercontent.com/37946988/180852315-b3da1d54-9cbf-4387-a59a-b12ea42706e8.png)
 7. Click authorize, click through Captcha, and you're done! Your discord bot is be ready to go! ![image](https://user-images.githubusercontent.com/37946988/180853164-d0645456-2591-4889-b2c2-b1f3dbccf376.png)
+8. If you are running `mimicbot forge` make sure to return to the CLI, enter your Discord API token and continue on the CLI.
 ### Retrieving Huggingface API token
 If you are running `mimicbot forge` on the CLI make sure to complete this guide before moving submitting the API key.
 1. Create a huggingface account and log in.
 2. Navigate to [your settings](https://huggingface.co/settings/profile).
 3. Click on the "Access Tokens" tab, then create a "New Token". Then label it, select its "Role" as "write", and press "Generate a token". ![image](https://user-images.githubusercontent.com/37946988/181860877-a2d3f87f-e886-42d4-a4df-4f54eb75707c.png)
 4. Copy the "write" token, this is the token you will provide to mimicbot. ![image](https://user-images.githubusercontent.com/37946988/180854416-8370bf8e-0f1a-4175-a492-ed2bd37cd004.png)
+5. If you are running `mimicbot forge` make sure to return to the CLI, enter your Huggingface API token and continue on the CLI.
  
  
 ## Troubleshooting

@@ -91,8 +91,8 @@ def init(
                              default=f"mimicbot-{str(int(random() * 1000))}"),
         "--huggingface-model-name",
         "-hmn",
-        prompt="\nEnter the name of the model(AI system which will generate mimicbot's responses)",
-        help="Name of the model(AI system which will generate mimicbot's responses) to be uploaded and be fine-tuned huggingface.",
+        prompt="\nName of your model(AI system which will produce text that mimics the user) to be uploaded and fine-tuned in Huggingface.\nName of the model",
+        help="Name of your model(AI system which will produce text that mimics the user) to be uploaded and fine-tuned in Huggingface.",
     )
 ) -> None:
     """Initialize and set the config variables for mimicbot."""
@@ -111,13 +111,10 @@ def init(
     if not reccomended_settings:
         context_length = 0
         extrapolate = typer.confirm(
-            "\n(the data will be expanded by creating squentially sensitive context combinations based on the context window)\nReccomended if less than 2,000 rows of training data.\nExtrapolate data?", default=True)
+            "\nData will be extrapolated by creating squentially sensitive context combinations based on the context window\nReccomended if less than 2,000 rows of training data.\nExtrapolate data?", default=True)
         while int(context_length) < 1:
-            # if extrapolate:
-            #     context_window_text = "(number of previous messages to use for context)\nEnter the size of the context messages window"
-            context_window_text = "Enter the context length (number of context messages) to use for training"
             context_length = typer.prompt(
-                f"\n*must be greater than 0\n{context_window_text}",
+                f"\n*must be greater than 0\Context length is number of messages to use as context for text generation to use for training and using mimicbot.\nContext length",
                 default=2,
             )
             try:
@@ -130,7 +127,7 @@ def init(
             context_window = 0
             while int(context_window) <= context_length:
                 context_window = typer.prompt(
-                    f"\n*must be greater than your context length ({context_length})\nEnter the context window (number of previous messages to use as reference to build context)",
+                    f"\n*must be greater than your context length ({context_length})\nContext window is the number of previous messages to use as reference to build/extrapolate context.\n Context window",
                     default=6
                 )
                 try:

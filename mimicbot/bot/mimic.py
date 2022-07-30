@@ -109,6 +109,8 @@ def start_mimic(model_save: types.ModelSave):
                     f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) {query_res}")
                 while "error" in query_res.keys() and attempts <= 3:
                     # wait for model to load and try again
+                    if query_res["error"] == "Empty input is invalid":
+                        break
                     time_to_load = int(int(query_res["estimated_time"]) * 1.3)
                     typer.secho(
                         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Waiting for model to load. Will take {time_to_load}s", fg=typer.colors.YELLOW)
@@ -117,10 +119,16 @@ def start_mimic(model_save: types.ModelSave):
                     typer.echo(
                         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) {query_res}")
                     attempts += 1
+
                 if attempts > 3:
                     typer.secho(
                         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Model failed to load. Please try again later.", fg=typer.colors.RED)
                     await channel.send("🤖(failed to load, please try again later)")
+                elif "error" in query_res.keys() and query_res["error"] == "Empty input is invalid":
+                    typer.secho(
+                        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Empty input.",
+                        fg=typer.colors.YELLOW)
+                    await channel.send("...")
                 else:
                     response = query_res["generated_text"]
                     try:
