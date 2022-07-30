@@ -47,16 +47,16 @@ def init(
                              default=str(utils.datetime_str())),
         "--session",
         "-s",
-        prompt="\nSession name",
-        help="Session name for organization of data",
+        prompt="\nSession name for organization in the data path",
+        help="Session name for organization in the data path.",
     ),
     data_path: str = typer.Option(
         utils.current_config("general", "data_path",
                              default=str(config.APP_DIR_PATH / "data")),
         "--data-path",
         "-dp",
-        prompt="\nPath to store data",
-        help="Path to mimicbot mined data.",
+        prompt="\nPath to save mimicbot's server data and (AI) model saves",
+        help="Path to save mimicbot's server data and (AI) model saves.",
     ),
     discord_api_key: str = typer.Option(
         utils.current_config("discord", "api_key"),
@@ -69,14 +69,14 @@ def init(
         utils.current_config("discord", "guild"),
         "--discord-guild",
         "-dg",
-        prompt="\n(for use in gathering data)\n*you must have admin privilages\nDiscord guild(server) name",
+        prompt="\n*you must have admin privilages\nThe guild(server) where data will be gathered and the bot will be running.\nDiscord guild(server) name",
         help="Discord guild(server) name",
     ),
     discord_target_user: str = typer.Option(
         utils.current_config("discord", "target_user"),
         "--discord-target-user",
         "-dtu",
-        prompt="\n(user to mimic from the discord guild)\nTarget user",
+        prompt="""\n(user to mimic from the discord guild)\nProvide only the name without the numbers. For example if the id is "Mimicbot#1234" enter "Mimicbot".\nTarget user""",
         help="Discord user from guild(server) to mimic.",
     ),
     huggingface_api_key: str = typer.Option(
@@ -91,8 +91,8 @@ def init(
                              default=f"mimicbot-{str(int(random() * 1000))}"),
         "--huggingface-model-name",
         "-hmn",
-        prompt="\nEnter the name of the model",
-        help="Name of the model to be uploaded or be fine-tuned huggingface.",
+        prompt="\nEnter the name of the model(AI system which will generate mimicbot's responses)",
+        help="Name of the model(AI system which will generate mimicbot's responses) to be uploaded and be fine-tuned huggingface.",
     )
 ) -> None:
     """Initialize and set the config variables for mimicbot."""
@@ -218,14 +218,15 @@ def mine(
 
     data_path, error = data_mine(app_path / "config.ini")
     if error:
-        if error == MISSING_GUILD_ERROR :
-            typer.secho(f"Error: Please make sure your bot is connected to the server", fg=typer.colors.RED)
+        if error == MISSING_GUILD_ERROR:
+            typer.secho(
+                f"Error: Please make sure your bot is connected to the server", fg=typer.colors.RED)
         else:
             typer.secho(f"Error: {ERROR[error]}", fg=typer.colors.RED)
         raise typer.Exit(1)
 
     typer.secho(
-        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully mined data. You can find it here [{str(data_path)}]",
+        f"""\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully mined data. You can find it here [{str(data_path)}]. (Ignore the "RuntimeError: Event loop is closed" error show below)""",
         fg=typer.colors.GREEN
     )
 
@@ -302,7 +303,7 @@ def train_model(
     ),
 ):
     """Trains the model to immitate the user identified in the config."""
-    
+
     app_path = Path(app_path)
     while not session_path or not Path(session_path).exists():
         config_parser = utils.callback_config()
@@ -424,19 +425,29 @@ def activate_bot(
 @app.command(name="forge")
 def forge(
 ):
-    """All encompassing command to produce a bot from scratch."""
+    """All encompassing command to produce a bot from scratch. It runs the following commands in order: init, mine, preprocess, train, activate"""
+    typer.secho(
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (1/5)", fg=typer.colors.BLUE)
     res = os.system("python -m mimicbot init")
     if res != 0:
         raise typer.Exit(1)
+    typer.secho(
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (2/5)", fg=typer.colors.BLUE)
     res = os.system("python -m mimicbot mine --forge-pipeline")
     if res != 0:
         raise typer.Exit(1)
+    typer.secho(
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (3/5)", fg=typer.colors.BLUE)
     res = os.system("python -m mimicbot preprocess --forge-pipeline")
     if res != 0:
         raise typer.Exit(1)
+    typer.secho(
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (4/5)", fg=typer.colors.BLUE)
     res = os.system("python -m mimicbot train --forge-pipeline")
     if res != 0:
         raise typer.Exit(1)
+    typer.secho(
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing final step (5/5)", fg=typer.colors.BLUE)
     res = os.system("python -m mimicbot activate --forge-pipeline")
     if res != 0:
         raise typer.Exit(1)

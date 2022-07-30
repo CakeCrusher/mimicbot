@@ -17,7 +17,7 @@ default_config = default_path / "config.ini"
 
 @pytest.fixture
 def mock_config_path(tmp_path):
-    print("mock_config_path tmp_path",tmp_path)
+    print("mock_config_path tmp_path", tmp_path)
     tmp_config_path = tmp_path / "config.ini"
     data_path = tmp_path / "data"
     config.init_app(tmp_path, data_path)
@@ -36,7 +36,7 @@ def mock_config_path(tmp_path):
 class TestMine:
     # Must have an initialized mimicbot config to the default parameters
     def test_successful_mine(self, tmp_path, mock_config_path):
-        print("test_successful_mine tmp_path",tmp_path)
+        print("test_successful_mine tmp_path", tmp_path)
         parsed_config = ConfigParser()
         parsed_config.read(str(mock_config_path))
         runner = CliRunner()
