@@ -157,3 +157,41 @@ timeline
 
   maybe modify num train epochs
   configure github actions
+[{"url": "https://huggingface.co/SebastianS/mimicbot-MetalSebastian", "context_length": 2, "data_path": "C:\\Projects\\MimicBot\\data\\The Cocky Crew\\MetalSebastian"}, {"url": "https://huggingface.co/SebastianS/mimicbot-MetalSebastian", "context_length": 2, "data_path": "C:\\Users\\1seba\\AppData\\Roaming\\mimicbot\\data\\The Cocky Crew\\MetalSebastian"}, {"url": "https://huggingface.co/SebastianS/mimicbot-MetalTaj", "context_length": 2, "data_path": "C:\\Users\\1seba\\AppData\\Roaming\\mimicbot\\data\\The Cocky Crew\\MetalTaj"}, {"url": "https://huggingface.co/SebastianS/mimicbot-MetalJessie", "context_length": 2, "data_path": "C:\\Users\\1seba\\AppData\\Roaming\\mimicbot\\data\\The Cocky Crew\\MetalJessie"}, {"url": "https://huggingface.co/SebastianS/mimicbot-MetalSam_v2", "context_length": 2, "data_path": "C:\\Users\\1seba\\AppData\\Roaming\\mimicbot\\data\\The Cocky Crew\\MetalSam-v2"}]
+tutorial
+  cli guide not read
+  intentions error
+    discord.errors.PrivilegedIntentsRequired: Shard ID None is requesting privileged intents that have not been explicitly enabled in the developer portal. It is recommended to go to https://discord.com/developers/applications/ and explicitly enable the privileged intents within your application's page.
+  fix low test data error
+    Traceback (most recent call last):
+    File "C:\Python310\lib\runpy.py", line 196, in _run_module_as_main
+      return _run_code(code, main_globals, None,
+    File "C:\Python310\lib\runpy.py", line 86, in _run_code
+      exec(code, run_globals)
+    File "C:\Projects\MimicBot\mimicbotwrapper\mimicbot\__main__.py", line 7, in <module>
+      main()
+    File "C:\Projects\MimicBot\mimicbotwrapper\mimicbot\__main__.py", line 4, in main
+      cli.app(prog_name=__app_name__)
+    File "C:\Projects\MimicBot\mimicbotwrapper\env\lib\site-packages\typer\main.py", line 214, in __call__
+      return get_command(self)(*args, **kwargs)
+    File "C:\Projects\MimicBot\mimicbotwrapper\env\lib\site-packages\click\core.py", line 1130, in __call__
+      return self.main(*args, **kwargs)
+    File "C:\Projects\MimicBot\mimicbotwrapper\env\lib\site-packages\click\core.py", line 1055, in main
+      rv = self.invoke(ctx)
+    File "C:\Projects\MimicBot\mimicbotwrapper\env\lib\site-packages\click\core.py", line 1657, in invoke
+      return _process_result(sub_ctx.command.invoke(sub_ctx))
+    File "C:\Projects\MimicBot\mimicbotwrapper\env\lib\site-packages\click\core.py", line 1404, in invoke
+      return ctx.invoke(self.callback, **ctx.params)
+    File "C:\Projects\MimicBot\mimicbotwrapper\env\lib\site-packages\click\core.py", line 760, in invoke
+      return __callback(*args, **kwargs)
+    File "C:\Projects\MimicBot\mimicbotwrapper\env\lib\site-packages\typer\main.py", line 500, in wrapper
+      return callback(**use_params)  # type: ignore
+    File "C:\Projects\MimicBot\mimicbotwrapper\mimicbot\cli.py", line 318, in train_model
+      res, error = train.train(session_path)
+    File "C:\Projects\MimicBot\mimicbotwrapper\mimicbot\train.py", line 729, in train
+      main(trn_df, val_df, args, True)
+    File "C:\Projects\MimicBot\mimicbotwrapper\mimicbot\train.py", line 716, in main
+      result = evaluate(args, model, tokenizer,
+    File "C:\Projects\MimicBot\mimicbotwrapper\mimicbot\train.py", line 587, in evaluate
+      eval_loss = eval_loss / nb_eval_steps
+  ZeroDivisionError: float division by zero

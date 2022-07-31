@@ -7,7 +7,7 @@ import os
 import typer
 import numpy as np
 
-from mimicbot import (SUCCESS, DIR_ERROR, USER_NAME_ERROR, config)
+from mimicbot import (SUCCESS, DIR_ERROR, USER_NAME_ERROR, config, Args)
 
 
 def clean_df(raw_messages_df: pd.DataFrame, members_df: pd.DataFrame) -> pd.DataFrame:
@@ -177,6 +177,14 @@ def package_data_for_training(cleaned_messages_path: Path, app_path: Path = conf
 
     train_data.to_csv(
         str(training_data_dir / "train.csv"), index=False)
+    
+    args = Args()
+    # if test data does not have any rows add a row
+    if len(test_data) == 0:
+        test_data = pd.DataFrame(columns=response_and_context_columns)
+        # make test_data a compy of train_data with only the first row
+        test_data = train_data.iloc[0:args.per_gpu_train_batch_size]
+
     test_data.to_csv(
         str(training_data_dir / "test.csv"), index=False)
 
