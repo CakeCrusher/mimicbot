@@ -20,6 +20,7 @@ def init_app(app_path: Path = str(APP_DIR_PATH), data_path: Path = APP_DIR_PATH 
 
 def init_config(app_path: Path = APP_DIR_PATH):
     try:
+        app_path.mkdir(parents=True, exist_ok=True)
         config_file_path = app_path / "config.ini"
         if not config_file_path.exists():
             config_file_path.touch(exist_ok=True)

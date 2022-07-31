@@ -11,7 +11,16 @@ It consists of a pipeline that creates the bot from scratch, along with multiple
 Type `python -m mimicbot --help` to see a list of commands. Similarly you can use `python -m mimicbot <A_MIMICBOT_COMMAND> --help` to see details on a specific command.
  
 ## Quickstart
-To get started follow the steps below:
+### Verify the following prerequisites are met
+1. Python 3.x (verify with `python --version` or `python3 --version` or `py --version`)
+  - Download from the official [Python website](https://www.python.org/downloads/)
+2. git-lfs (verify with `git lfs --version`)
+  - Install with `git lfs install` or follow the official [git lfs installation guide](https://git-lfs.github.com/).
+3. pip (verify with `pip --version`)
+  - Install with `py get-pip.py` or follow the official [pip installation guide](https://pip.pypa.io/en/stable/installation/).
+
+
+### Steps
 1. Clone the repository `git clone https://github.com/CakeCrusher/mimicbot.git`
 2. Navigate into the cloned directory `cd mimicbot`
 3. Install the dependencies `pip install -r requirements.txt`. If you have [CUDA](https://developer.nvidia.com/cuda-downloads) installed use  `pip install -r requirements-gpu.txt` instead. (WARNING: the dependencies will consume a lot of space. If you have an environment with pytorch already installed it is advisable that you use that environment.)
