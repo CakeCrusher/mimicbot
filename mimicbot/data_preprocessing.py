@@ -180,7 +180,7 @@ def package_data_for_training(cleaned_messages_path: Path, app_path: Path = conf
     
     args = Args()
     # if test data does not have any rows add a row
-    if len(test_data) == 0:
+    if len(test_data) < args.per_gpu_train_batch_size:
         test_data = pd.DataFrame(columns=response_and_context_columns)
         # make test_data a compy of train_data with only the first row
         test_data = train_data.iloc[0:args.per_gpu_train_batch_size]
