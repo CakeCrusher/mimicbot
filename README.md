@@ -24,8 +24,10 @@ Although technically you could deploy your bot to any server using this reposito
 Follow the steps listed in its README to deploy your bot.
  
 If you are still interested in deploying with this repository you can do so by either running `forge` on the server or passing the configuration files and data files to the appropriate paths on the server and then running `activate`.
-## Todo
+## Todo 
+(Feel free to contribute)
 - [x] Incorporate github actions to run the pytest tests.
+- [ ] More error handling.
 - [ ] Linux support.
 - [ ] Add linting.
   - [ ] github action.
@@ -33,6 +35,7 @@ If you are still interested in deploying with this repository you can do so by e
 - [ ] More flexible with inputs
   - [ ] Target user input
   - [ ] Guild channel names
+- [ ] Make sure the bot learns as it is being used.
 - [ ] Create a public server for running through the pipeline and adding deploying the bot. Will work by simply downloading the bot and commanding it to copy a user, then wait a couple minutes and BAM! It's mimicing.
 - [ ] Add testing
   - [ ] `activate` command unit tests
