@@ -1,5 +1,8 @@
 # mimicbot 🤖
- 
+
+### Disclaimer
+Linux support is not implemented yet.
+
 ## About
 Mimicbot is a pipeline that is currently intended for use exclusively in the Discord platform. Mimicbot enables the effortless yet modular creation of an AI chat bot modeled to imitate a user in the discord channel. For example if Shakespeare is in your channel and the mimicbot is based on him, mimicbot will adjust its responses to how Shakespeare would speak.
 It consists of a pipeline that creates the bot from scratch, along with multiple other commands to create the bot in a modular format
@@ -23,6 +26,7 @@ Follow the steps listed in its README to deploy your bot.
 If you are still interested in deploying with this repository you can do so by either running `forge` on the server or passing the configuration files and data files to the appropriate paths on the server and then running `activate`.
 ## Todo
 - [x] Incorporate github actions to run the pytest tests.
+- [ ] Linux support.
 - [ ] Add linting.
   - [ ] github action.
 - [ ] Use [DiscordChatExporter](https://github.com/Tyrrrz/DiscordChatExporter) cli as the primary source of mining data to be able to capture dm data in addition to guild data. It also does not require admin access for guilds. The only catch is its security is yet to be determined.

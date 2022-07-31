@@ -157,7 +157,3 @@ timeline
 
   maybe modify num train epochs
   configure github actions
-
-testing
-  "if you wanna improve it"
-  explain context length and context window
