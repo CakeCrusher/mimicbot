@@ -12,11 +12,11 @@ Type `python -m mimicbot --help` to see a list of commands. Similarly you can us
  
 ## Quickstart
 ### Verify the following prerequisites are met
-1. Python 3.x (verify with `python --version` or `python3 --version` or `py --version`)
+- Python 3.x (verify with `python --version` or `python3 --version` or `py --version`)
   - Download from the official [Python website](https://www.python.org/downloads/)
-2. git-lfs (verify with `git lfs --version`)
+- git-lfs (verify with `git lfs --version`)
   - Install with `git lfs install` or follow the official [git lfs installation guide](https://git-lfs.github.com/).
-3. pip (verify with `pip --version`)
+- pip (verify with `pip --version`)
   - Install with `py get-pip.py` or follow the official [pip installation guide](https://pip.pypa.io/en/stable/installation/).
 
 
