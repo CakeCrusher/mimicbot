@@ -2,7 +2,7 @@
 #       docker build -t mimicbot .
 # 2. Run new container (will need to be retrained):
 #       docker run -it --name mimicbot mimicbot
-# 3. Start old container:
+# 3. Start old container (select YES on first prompt, your last config should be the default values):
 #       docker start -ai mimicbot
 # 4. Start old container in bash (good for debugging):
 #       docker start mimicbot
