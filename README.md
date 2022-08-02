@@ -1,8 +1,5 @@
 # mimicbot 🤖
 
-### Disclaimer
-Linux support is not implemented yet.
-
 ## About
 Mimicbot is a pipeline that is currently intended for use exclusively in the Discord platform. Mimicbot enables the effortless yet modular creation of an AI chat bot modeled to imitate a user in the discord channel. For example if Shakespeare is in your channel and the mimicbot is based on him, mimicbot will adjust its responses to how Shakespeare would speak.
 It consists of a pipeline that creates the bot from scratch, along with multiple other commands to create the bot in a modular format
@@ -19,6 +16,8 @@ Type `python -m mimicbot --help` to see a list of commands. Similarly you can us
 - pip (verify with `pip --version`)
   - Install with `py get-pip.py` or follow the official [pip installation guide](https://pip.pypa.io/en/stable/installation/).
 
+### Note
+If you run into any issues, you dont know how to deal with. Utilize the mimicbot [Dockerfile](https://github.com/CakeCrusher/mimicbot/blob/master/Dockerfile) to [spin up a functional environment](https://github.com/CakeCrusher/mimicbot#spining-up-docker-environement).
 
 ### Steps
 1. Clone the repository `git clone https://github.com/CakeCrusher/mimicbot.git`
@@ -33,6 +32,8 @@ Although technically you could deploy your bot to any server using this reposito
 Follow the steps listed in its README to deploy your bot.
  
 If you are still interested in deploying with this repository you can do so by either running `forge` on the server or passing the configuration files and data files to the appropriate paths on the server and then running `activate`.
+
+
 ## Todo 
 (Feel free to contribute)
 - [x] Incorporate github actions to run the pytest tests.
@@ -54,6 +55,7 @@ If you are still interested in deploying with this repository you can do so by e
  
 ## Mini-guides
 Quick guides to clear up the more confusing parts to getting up and running with mimicbot.
+
 ### Setting up Discord bot (and retrieving API token)
 If you are running `mimicbot forge` on the CLI make sure to complete this guide before submitting the API key.
 1. Create a discord developer account and log in.
@@ -64,6 +66,7 @@ If you are running `mimicbot forge` on the CLI make sure to complete this guide 
 6. (You must be signed into your discord account on the browser) Simply navigate to the URL you copied, then select the server (you must have admin privileges) where you want to both: mine data and activate the bot. Click create. ![image](https://user-images.githubusercontent.com/37946988/180852315-b3da1d54-9cbf-4387-a59a-b12ea42706e8.png)
 7. Click authorize, click through Captcha, and you're done! Your discord bot is be ready to go! ![image](https://user-images.githubusercontent.com/37946988/180853164-d0645456-2591-4889-b2c2-b1f3dbccf376.png)
 8. If you are running `mimicbot forge` make sure to return to the CLI, enter your Discord API token and continue on the CLI.
+
 ### Retrieving Huggingface API token
 If you are running `mimicbot forge` on the CLI make sure to complete this guide before moving submitting the API key.
 1. Create a huggingface account and log in.
@@ -71,10 +74,18 @@ If you are running `mimicbot forge` on the CLI make sure to complete this guide 
 3. Click on the "Access Tokens" tab, then create a "New Token". Then label it, select its "Role" as "write", and press "Generate a token". ![image](https://user-images.githubusercontent.com/37946988/181860877-a2d3f87f-e886-42d4-a4df-4f54eb75707c.png)
 4. Copy the "write" token, this is the token you will provide to mimicbot. ![image](https://user-images.githubusercontent.com/37946988/180854416-8370bf8e-0f1a-4175-a492-ed2bd37cd004.png)
 5. If you are running `mimicbot forge` make sure to return to the CLI, enter your Huggingface API token and continue on the CLI.
- 
+
+### Spining up Docker Environement
+1. Verify you have docker installed and running by using `docker ps`. You may install it from their [official installation page](https://docs.docker.com/get-docker/).
+2. Create a new docker image by running `docker build -t mimicbot .`.
+3. Run the docker image with `docker run -it --name <ANY_NAME> mimicbot /bin/bash`.
+4. You are now ready to start using mimicbot's CLI.
+5. You may return to the same container by running `docker start -ai <ANY_NAME>`
+
  
 ## Troubleshooting
 Errors may occur here are common ones with solutions.
+
 ### GPU error
 1. Visit [this colab notebook](https://colab.research.google.com/drive/1a196Ev2FJ8U_L__BjTTLFqCXrq9YFhc7?usp=sharing).
 2. Copy all file in your `/DATA_PATH/colab` into the root directory of the notebook. (If you don't know what your `DATA_PATH` is, enter the following command in a terminal: `python -m mimicbot config`. Then find the line that with the text `data_path = ...` your `DATA_PATH` is listed there.) ![image](https://user-images.githubusercontent.com/37946988/180862412-5eaf0f84-d5e7-4498-9b58-f1ebaa424eb1.png)

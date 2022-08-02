@@ -21,4 +21,3 @@ COPY . .
 RUN mkdir /root/.config /root/.config/mimicbot
 
 RUN echo "#### NOTE: View Dockerfile to see some recommended commands ####"
-CMD ["python", "-m", "mimicbot", "forge"]
