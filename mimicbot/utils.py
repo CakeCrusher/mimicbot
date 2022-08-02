@@ -1,10 +1,14 @@
 import configparser
 import datetime
 from pathlib import Path
+from types import NoneType
+from typing import Tuple
 import typer
 from mimicbot import config, __app_name__, types
 from collections.abc import Callable
 import json
+import numpy as np
+import pandas as pd
 
 APP_DIR_PATH = Path(typer.get_app_dir(__app_name__))
 
@@ -124,3 +128,26 @@ def prompt_model_save() -> int:
             typer.secho(
                 "The number you entered does not match any model.", fg=typer.colors.RED)
     return model_idx
+
+
+def standardize_data(messages: pd.DataFrame, members: pd.DataFrame, author_id_column: str, content_column: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    standard_messages = pd.DataFrame(columns=["author_id", "content"], data=messages[[
+                                     author_id_column, content_column]].values)
+    missing_members = list(
+        set(messages[author_id_column].unique()) - set(members["id"].unique()))
+    while bool(len(missing_members)):
+        member_name = typer.prompt(
+            f'\nEnter name for member with id ({missing_members[0]})', default=f'Human-{np.random.randint(100, 999)}')
+        members = pd.concat(
+            [
+                members,
+                pd.DataFrame(columns=['id', 'name'], data=[
+                             [missing_members[0], member_name]])
+            ],
+            ignore_index=True
+        )
+
+        missing_members = list(
+            set(messages[author_id_column].unique()) - set(members["id"].unique()))
+
+    return (standard_messages, members)

@@ -8,7 +8,7 @@ from typing import Tuple
 import typer
 
 from mimicbot import (  # pylint: disable=[import-error]
-    SUCCESS, UNKNOWN_ERROR, API_KEY_ERROR, MISSING_GUILD_ERROR, ABORT
+    SUCCESS, UNKNOWN_ERROR, API_KEY_ERROR, MISSING_GUILD_ERROR, ABORT, utils
 )
 
 
@@ -82,8 +82,16 @@ def data_mine(config_path: Path) -> Tuple[Path, int]:
         # create members reference file
         members_columns = ["id", "name"]
         members_data = [[member.id, member.name] for member in guild.members]
-        messages_df = pd.DataFrame(columns=members_columns, data=members_data)
-        messages_df.to_csv(str(GUILD_DATA_PATH / "members.csv"), index=False)
+        members_df = pd.DataFrame(columns=members_columns, data=members_data)
+
+        standard_messages, standard_members = utils.standardize_data(
+            messages_df, members_df, "author_id", "content")
+
+        standard_messages.to_csv(
+            str(GUILD_DATA_PATH / "raw_messages.csv"), index=False)
+        standard_members.to_csv(
+            str(GUILD_DATA_PATH / "members.csv"), index=False)
+
         client.finished_mining = True
         await client.close()
 

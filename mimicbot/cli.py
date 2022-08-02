@@ -1,5 +1,6 @@
 import configparser
 from random import random
+from types import NoneType
 import typer
 from mimicbot import (
     ERROR,
@@ -28,6 +29,7 @@ import json
 import datetime
 from huggingface_hub import get_full_repo_name
 import shutil
+import pandas as pd
 
 
 app = typer.Typer()
@@ -498,3 +500,64 @@ def get_config(
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully printed the config above.",
         fg=typer.colors.GREEN)
+
+
+@app.command(name="standardize_data")
+def standardize_data(
+    messages_path: str = typer.Option(
+        ...,
+        "--messages_path",
+        "-messp",
+        prompt="\nPath to custom messages file",
+        help="Path to custom messages file.",
+
+    ),
+    members_path=typer.Option(
+        "",
+        "--members_path",
+        "-memp",
+        prompt="\n(optional)\nPath to members info file",
+        help="Path to members info file.",
+
+    ),
+    output_dir: str = typer.Option(
+        utils.session_path(utils.callback_config()),
+        "--output_dir",
+        "-od",
+        prompt="\nDirectory to output standardized files",
+        help="Directory to output standardized files.",
+
+    ),
+    author_id_column: str = typer.Option(
+        ...,
+        "--author_id_column",
+        "-aic",
+        prompt="\nName of author column in your custom messages file",
+        help="Name of author column in your custom messages file.",
+
+    ),
+    content_column: str = typer.Option(
+        ...,
+        "--content_column",
+        "-cc",
+        prompt="\nName of content(message) column in your custom messages file",
+        help="Name of content(message) column in your custom messages file.",
+    ),
+):
+    messages = pd.read_csv(messages_path)
+    try:
+        members = pd.read_csv(members_path)
+    except:
+        members = pd.DataFrame(columns=['id', 'name'])
+    output_dir = Path(output_dir)
+
+    standard_messages, standard_members = utils.standardize_data(
+        messages, members, author_id_column, content_column)
+
+    standard_messages.to_csv(output_dir / 'raw_messages.csv', index=False)
+    standard_members.to_csv(output_dir / 'members.csv', index=False)
+
+    typer.secho(
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully standardized data at output directory ({str(output_dir)}).",
+        fg=typer.colors.GREEN
+    )
