@@ -209,4 +209,8 @@ discord-independent-mimic
   step mine data will be skipped if True
   mine will convert raw_data to raw_template_messages
 
-  
+  introduced possibility of context to be pulled from different channel at channel splits 
+
+  will need to change init dramatically
+    will change all discord inputs into a callback inside the custom training data
+    should i make a new init command  

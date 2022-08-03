@@ -52,6 +52,15 @@ def app_path_verifier(app_path_str: str) -> None:
     return app_path_str
 
 
+def path_verifier(param: typer.CallbackParam, path_str: str) -> Path:
+    path = Path(path_str)
+    while not path.exists():
+        typer.secho(f"Path ({path}) does not exist.", fg=typer.colors.RED)
+        path = typer.prompt(f"Enter new {param.name}")
+        path = Path(path)
+    return path
+
+
 def datetime_str():
     return datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
 

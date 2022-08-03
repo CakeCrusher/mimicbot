@@ -239,10 +239,12 @@ def preprocess_data(
         help="Path to mimicbot config."
     ),
     session_path: str = typer.Option(
-        None,
+        utils.session_path(utils.callback_config()),
         "--session-path",
         "-sp",
-        help="Path to session data."
+        prompt="Enter the path to the session data",
+        help="Path to session data.",
+        callback=utils.path_verifier
     ),
     forge_pipeline: bool = typer.Option(
         False,
@@ -252,15 +254,6 @@ def preprocess_data(
     ),
 ) -> None:
     """Preprocess the data such that it is in a standardized format. Then prepares the data for training."""
-    while not session_path or not Path(session_path).exists():
-        config_parser = utils.callback_config()
-        session_path = utils.session_path(config_parser)
-        if not forge_pipeline:
-            session_path = typer.prompt(
-                f"\nEnter the path to the session data", default=str(session_path)
-            )
-        print("session_path", session_path)
-        print("Path(session_path).exists()", Path(session_path).exists())
 
     session_path = Path(session_path)
     clean_data_path, error = data_preprocessing.clean_messages(session_path)
