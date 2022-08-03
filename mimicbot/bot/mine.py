@@ -69,9 +69,6 @@ def data_mine(config_path: Path) -> Tuple[Path, int]:
             ]
             messages_data = messages_data + messages_for_channel
 
-        # create a directory for session
-        GUILD_DATA_PATH.mkdir(parents=True, exist_ok=True)
-
         # write to csv
         messages_df = pd.DataFrame(
             columns=messages_columns, data=messages_data)

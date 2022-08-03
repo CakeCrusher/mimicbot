@@ -44,6 +44,7 @@ If you are still interested in deploying with this repository you can do so by e
 - [ ] Add linting.
   - [ ] github action.
 - [ ] Use [DiscordChatExporter](https://github.com/Tyrrrz/DiscordChatExporter) cli as the primary source of mining data to be able to capture dm data in addition to guild data. It also does not require admin access for guilds. The only catch is its security is yet to be determined.
+- [ ] Embed training settings into the CLI command
 - [ ] More flexible with inputs
   - [ ] Target user input
   - [ ] Guild channel names

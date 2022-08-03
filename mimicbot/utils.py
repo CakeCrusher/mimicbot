@@ -160,3 +160,19 @@ def standardize_data(messages: pd.DataFrame, members: pd.DataFrame, author_id_co
             set(messages[author_id_column].unique()) - set(members["id"].unique()))
 
     return (standard_messages, members)
+
+def save_standardized_data(messages_path: str, members_path: str, output_dir: str, author_id_column: str, content_column: str) -> Path:
+    messages = pd.read_csv(messages_path)
+    try:
+        members = pd.read_csv(members_path)
+    except:
+        members = pd.DataFrame(columns=['id', 'name'])
+    output_dir = Path(output_dir)
+
+    standard_messages, standard_members = standardize_data(
+        messages, members, author_id_column, content_column)
+
+    standard_messages.to_csv(output_dir / 'raw_messages.csv', index=False)
+    standard_members.to_csv(output_dir / 'members.csv', index=False)
+
+    return output_dir

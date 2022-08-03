@@ -35,8 +35,176 @@ import pandas as pd
 app = typer.Typer()
 
 
-@app.command()
-def init(
+@app.command(name="init_custom")
+def init_custom(
+    app_path: str = typer.Option(
+        str(config.APP_DIR_PATH),
+        "--app-path",
+        "-ap",
+        help="(WARNING: do not change)\nPath to mimicbot config and user data.",
+        callback=utils.app_path_verifier,
+    ),
+    session: str = typer.Option(
+        utils.current_config("general", "session",
+                             default=str(utils.datetime_str())),
+        "--session",
+        "-s",
+        prompt="\nSession name for organization in the data path",
+        help="Session name for organization in the data path.",
+    ),
+    data_path: str = typer.Option(
+        utils.current_config("general", "data_path",
+                             default=str(config.APP_DIR_PATH / "data")),
+        "--data-path",
+        "-dp",
+        prompt="\nPath to save mimicbot's server data and (AI) model saves",
+        help="Path to save mimicbot's server data and (AI) model saves.",
+    ),
+    huggingface_api_key: str = typer.Option(
+        utils.current_config("huggingface", "api_key"),
+        "--huggingface-api-key",
+        "-hak",
+        prompt="\nGuide to retrieving huggingface API key: https://github.com/CakeCrusher/mimicbot#retrieving-huggingface-api-token \nEnter your huggingface API key",
+        help="Huggingface's write key to upload models to your account.",
+    ),
+    huggingface_model_name: str = typer.Option(
+        utils.current_config("huggingface", "model_name",
+                             default=f"mimicbot-{str(int(random() * 1000))}"),
+        "--huggingface-model-name",
+        "-hmn",
+        prompt="\nName of your model(AI system which will produce text that mimics the user) to be uploaded and fine-tuned in Huggingface.\nName of the model",
+        help="Name of your model(AI system which will produce text that mimics the user) to be uploaded and fine-tuned in Huggingface.",
+    ),
+    messages_path: str = typer.Option(
+        ...,
+        "--messages_path",
+        "-messp",
+        prompt="\nPath to custom messages file",
+        help="Path to custom messages file.",
+        callback=utils.path_verifier,
+    ),
+    members_path=typer.Option(
+        "",
+        "--members_path",
+        "-memp",
+        prompt="\n(optional)\nPath to members info file",
+        help="Path to members info file.",
+    ),
+    author_id_column: str = typer.Option(
+        ...,
+        "--author_id_column",
+        "-aic",
+        prompt="\nName of author column in your custom messages file",
+        help="Name of author column in your custom messages file.",
+
+    ),
+    content_column: str = typer.Option(
+        ...,
+        "--content_column",
+        "-cc",
+        prompt="\nName of content(message) column in your custom messages file",
+        help="Name of content(message) column in your custom messages file.",
+    ),
+    output_dir: str = typer.Option(
+        None,
+        "--output_dir",
+        "-od",
+        help="Directory to output standardized files.",
+    ),
+    forge_pipeline: bool = typer.Option(
+        False,
+        "--forge-pipeline",
+        "-fp",
+        help="Is running forge command.",
+    ),
+) -> None:
+    """Initialize and set the config variables for using mimicbot independently of any platform. Requires message data."""
+
+    typer.echo(f"app_path: {app_path}")
+    app_path = Path(app_path)
+    config.init_app(app_path, Path(data_path))
+    config.general_config(app_path, data_path, session)
+    config.discord_config(
+        app_path,
+        utils.current_config("discord", "api_key"),
+        "CUSTOM",
+        utils.current_config("discord", "target_user")
+    )
+    config.huggingface_config(
+        app_path, huggingface_api_key, huggingface_model_name, utils.current_config("huggingface", "model_saves", "[]"))
+
+    utils.session_path(utils.callback_config()).mkdir(parents=True, exist_ok=True)
+
+    if forge_pipeline:
+        output_dir = str(utils.session_path(utils.callback_config()))
+    elif not output_dir:
+        output_dir = typer.prompt(
+            "\nDirectory to output standardized files",
+            default=str(utils.session_path(utils.callback_config())),
+        )
+    
+
+
+    reccomended_settings = typer.confirm(
+        "\nUse reccommended training settings?", default=True)
+    if not reccomended_settings:
+        context_length = 0
+        extrapolate = typer.confirm(
+            "\nData will be extrapolated by creating squentially sensitive context combinations based on the context window\nReccomended if less than 2,000 rows of training data.\nExtrapolate data?", default=True)
+        while int(context_length) < 1:
+            context_length = typer.prompt(
+                f"\n*must be greater than 0\Context length is number of messages to use as context for text generation to use for training and using mimicbot.\nContext length",
+                default=2,
+            )
+            try:
+                context_length = int(context_length)
+            except ValueError:
+                typer.secho("Invalid input. Please enter a number.",
+                            fg=typer.colors.RED)
+        context_window: str or int = ""
+        if extrapolate:
+            context_window = 0
+            while int(context_window) <= context_length:
+                context_window = typer.prompt(
+                    f"\n*must be greater than your context length ({context_length})\nContext window is the number of previous messages to use as reference to build/extrapolate context.\n Context window",
+                    default=6
+                )
+                try:
+                    context_window = int(context_window)
+                except ValueError:
+                    typer.secho("Invalid input. Please enter a number.",
+                                fg=typer.colors.RED)
+        test_perc = 0
+        while float(test_perc) <= 0 or float(test_perc) >= 1:
+            test_perc = typer.prompt(
+                "\n*must be a decimal between 0 and 1\nEnter the percentage of data to use for testing",
+                default=0.1,
+            )
+            try:
+                test_perc = float(test_perc)
+            except ValueError:
+                typer.secho("Invalid input. Please enter a number.",
+                            fg=typer.colors.RED)
+        config.training_config(app_path, str(
+            context_window), str(context_length), str(test_perc))
+    else:
+        config.training_config(app_path, "", "2", "0.1")
+    
+    typer.secho(
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully initialized mimicbot.", fg=typer.colors.GREEN)
+    
+    if forge_pipeline:
+        typer.secho(
+            f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (2/5)", fg=typer.colors.BLUE)
+    saved_at = utils.save_standardized_data(messages_path, members_path, output_dir, author_id_column, content_column)
+    typer.secho(
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully standardized custom data. You can find it here [{str(saved_at)}].", fg=typer.colors.GREEN)
+
+
+
+
+@app.command(name="init_discord")
+def init_discord(
     app_path: str = typer.Option(
         str(config.APP_DIR_PATH),
         "--app-path",
@@ -95,9 +263,15 @@ def init(
         "-hmn",
         prompt="\nName of your model(AI system which will produce text that mimics the user) to be uploaded and fine-tuned in Huggingface.\nName of the model",
         help="Name of your model(AI system which will produce text that mimics the user) to be uploaded and fine-tuned in Huggingface.",
-    )
+    ),
+    forge_pipeline: bool = typer.Option(
+        False,
+        "--forge-pipeline",
+        "-fp",
+        help="Is running forge command.",
+    ),
 ) -> None:
-    """Initialize and set the config variables for mimicbot."""
+    """Initialize and set the config variables for using mimicbot on Discord."""
 
     typer.echo(f"app_path: {app_path}")
     app_path = Path(app_path)
@@ -107,6 +281,8 @@ def init(
                           discord_guild, discord_target_user)
     config.huggingface_config(
         app_path, huggingface_api_key, huggingface_model_name, utils.current_config("huggingface", "model_saves", "[]"))
+
+    utils.session_path(utils.callback_config()).mkdir(parents=True, exist_ok=True)
 
     reccomended_settings = typer.confirm(
         "\nUse reccommended training settings?", default=True)
@@ -416,18 +592,29 @@ def activate_bot(
 
 @app.command(name="forge")
 def forge(
+    discord_bot: bool = typer.Option(
+        True,
+        "--discord-bot",
+        "-db",
+        prompt="\nCreating a discord bot or an independently ran bot (requires custom data).\nForge a discord bot?",
+        help="\nCreating a discord bot or an independently ran bot (requires custom data).",
+    )
 ):
     """All encompassing command to produce a bot from scratch. It runs the following commands in order: init, mine, preprocess, train, activate"""
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (1/5)", fg=typer.colors.BLUE)
-    res = os.system("python -m mimicbot init")
+    if discord_bot:
+        res = os.system("python -m mimicbot init_discord --forge-pipeline")
+    else:
+        res = os.system("python -m mimicbot init_custom --forge-pipeline")
     if res != 0:
         raise typer.Exit(1)
-    typer.secho(
-        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (2/5)", fg=typer.colors.BLUE)
-    res = os.system("python -m mimicbot mine --forge-pipeline")
-    if res != 0:
-        raise typer.Exit(1)
+    if discord_bot:
+        typer.secho(
+            f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (2/5)", fg=typer.colors.BLUE)
+        res = os.system("python -m mimicbot mine --forge-pipeline")
+        if res != 0:
+            raise typer.Exit(1)
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (3/5)", fg=typer.colors.BLUE)
     res = os.system("python -m mimicbot preprocess --forge-pipeline")
@@ -537,19 +724,7 @@ def standardize_data(
         help="Name of content(message) column in your custom messages file.",
     ),
 ):
-    messages = pd.read_csv(messages_path)
-    try:
-        members = pd.read_csv(members_path)
-    except:
-        members = pd.DataFrame(columns=['id', 'name'])
-    output_dir = Path(output_dir)
-
-    standard_messages, standard_members = utils.standardize_data(
-        messages, members, author_id_column, content_column)
-
-    standard_messages.to_csv(output_dir / 'raw_messages.csv', index=False)
-    standard_members.to_csv(output_dir / 'members.csv', index=False)
-
+    utils.save_standardized_data(messages_path, members_path, output_dir, author_id_column, content_column)
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully standardized data at output directory ({str(output_dir)}).",
         fg=typer.colors.GREEN
