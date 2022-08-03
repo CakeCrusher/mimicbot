@@ -60,6 +60,13 @@ def init_custom(
         prompt="\nPath to save mimicbot's server data and (AI) model saves",
         help="Path to save mimicbot's server data and (AI) model saves.",
     ),
+    target_user: str = typer.Option(
+        utils.current_config("discord", "target_user"),
+        "--target-user",
+        "-tu",
+        prompt="""\n(Provide the name, not the id, of the user)\nName of the user to mimic.\nTarget user""",
+        help="Name of the user to mimic.",
+    ),
     huggingface_api_key: str = typer.Option(
         utils.current_config("huggingface", "api_key"),
         "--huggingface-api-key",
@@ -128,7 +135,7 @@ def init_custom(
         app_path,
         utils.current_config("discord", "api_key"),
         "CUSTOM",
-        utils.current_config("discord", "target_user")
+        target_user
     )
     config.huggingface_config(
         app_path, huggingface_api_key, huggingface_model_name, utils.current_config("huggingface", "model_saves", "[]"))
@@ -391,7 +398,7 @@ def mine(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Begginging to mine data.", fg=typer.colors.BLUE)
     app_path: Path = utils.ensure_app_path(Path(app_path))
 
-    data_path, error = data_mine(app_path / "config.ini")
+    data_path, error = data_mine(app_path / "config.ini", forge_pipeline=True)
     if error:
         if error == MISSING_GUILD_ERROR:
             typer.secho(
@@ -607,6 +614,9 @@ def forge(
         res = os.system("python -m mimicbot init_discord --forge-pipeline")
     else:
         res = os.system("python -m mimicbot init_custom --forge-pipeline")
+    
+    session_path = utils.session_path(utils.callback_config())
+    
     if res != 0:
         raise typer.Exit(1)
     if discord_bot:
@@ -617,7 +627,7 @@ def forge(
             raise typer.Exit(1)
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (3/5)", fg=typer.colors.BLUE)
-    res = os.system("python -m mimicbot preprocess --forge-pipeline")
+    res = os.system(f"python -m mimicbot preprocess --forge-pipeline -sp \"{str(session_path)}\"")
     if res != 0:
         raise typer.Exit(1)
     typer.secho(
@@ -729,3 +739,28 @@ def standardize_data(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully standardized data at output directory ({str(output_dir)}).",
         fg=typer.colors.GREEN
     )
+
+@app.command(name="chat")
+def chat(
+    model_idx=typer.Option(
+        None,
+        "--model-idx",
+        "-mi",
+        help="Index of the model to be activated."
+    ),
+    forge_pipeline: bool = typer.Option(
+        False,
+        "--forge-pipeline",
+        "-fp",
+        help="Is running forge command.",
+    ),
+):
+    """Activates the discord bot with a trained mimicbot model."""
+    config_parser = utils.callback_config()
+    model_saves: list[types.ModelSave] = json.loads(
+        config_parser.get("huggingface", "model_saves"))
+    model_idx = 0
+    if not forge_pipeline:
+        model_idx = utils.prompt_model_save()
+    model_save = model_saves[model_idx]
+    start_mimic(model_save)

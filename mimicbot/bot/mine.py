@@ -12,7 +12,7 @@ from mimicbot import (  # pylint: disable=[import-error]
 )
 
 
-def data_mine(config_path: Path) -> Tuple[Path, int]:
+def data_mine(config_path: Path, forge_pipeline: bool = False) -> Tuple[Path, int]:
     config = ConfigParser()
     config.read(str(config_path))
     GUILD = config.get("discord", "guild")
@@ -82,7 +82,7 @@ def data_mine(config_path: Path) -> Tuple[Path, int]:
         members_df = pd.DataFrame(columns=members_columns, data=members_data)
 
         standard_messages, standard_members = utils.standardize_data(
-            messages_df, members_df, "author_id", "content")
+            messages_df, members_df, "author_id", "content", skip_naming=forge_pipeline)
 
         standard_messages.to_csv(
             str(GUILD_DATA_PATH / "raw_messages.csv"), index=False)

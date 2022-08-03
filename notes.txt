@@ -213,4 +213,7 @@ discord-independent-mimic
 
   will need to change init dramatically
     will change all discord inputs into a callback inside the custom training data
-    should i make a new init command  
+    should i make a new init command
+  need to eliminate dependance on guild for path
+  need to change target user to be "general" not "discord"
+  the messages context may be fed in reverse

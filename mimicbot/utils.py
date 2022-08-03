@@ -139,14 +139,18 @@ def prompt_model_save() -> int:
     return model_idx
 
 
-def standardize_data(messages: pd.DataFrame, members: pd.DataFrame, author_id_column: str, content_column: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def standardize_data(messages: pd.DataFrame, members: pd.DataFrame, author_id_column: str, content_column: str, skip_naming: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame]:
     standard_messages = pd.DataFrame(columns=["author_id", "content"], data=messages[[
                                      author_id_column, content_column]].values)
     missing_members = list(
         set(messages[author_id_column].unique()) - set(members["id"].unique()))
     while bool(len(missing_members)):
-        member_name = typer.prompt(
-            f'\nEnter name for member with id ({missing_members[0]})', default=f'Human-{np.random.randint(100, 999)}')
+        random_member_name = f'Human-{np.random.randint(100, 999)}'
+        if skip_naming:
+            member_name = random_member_name
+        else:
+            member_name = typer.prompt(
+                f'\nEnter name for member with id ({missing_members[0]})', default=random_member_name)
         members = pd.concat(
             [
                 members,
