@@ -1,5 +1,6 @@
 import configparser
 import datetime
+import requests
 from pathlib import Path
 from types import NoneType
 from typing import Tuple
@@ -180,3 +181,19 @@ def save_standardized_data(messages_path: str, members_path: str, output_dir: st
     standard_members.to_csv(output_dir / 'members.csv', index=False)
 
     return output_dir
+
+def query(payload_input, HF_TOKEN: str, EOS_TOKEN: str, MODEL_ID: str):
+    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+    API_URL = f"https://api-inference.huggingface.co/models/{MODEL_ID}"
+    messages_list = payload_input.split(EOS_TOKEN)[:-1]
+    payload = {
+        "inputs": {
+            "past_user_inputs": messages_list[:-1],
+            "generated_responses": [],
+            "text": messages_list[-1],
+        }
+    }
+    payload_dump = json.dumps(payload)
+    response = requests.request(
+        "POST", API_URL, headers=headers, data=payload_dump)
+    return json.loads(response.content.decode("utf-8"))

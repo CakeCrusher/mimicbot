@@ -1,6 +1,8 @@
 import configparser
 from random import random
+from time import sleep
 from types import NoneType
+from numpy import spacing
 import typer
 from mimicbot import (
     ERROR,
@@ -24,6 +26,7 @@ from mimicbot.bot.mine import data_mine
 from mimicbot.bot.mimic import start_mimic
 from pathlib import Path
 import os
+import sys
 import click
 import json
 import datetime
@@ -637,9 +640,14 @@ def forge(
         raise typer.Exit(1)
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing final step (5/5)", fg=typer.colors.BLUE)
-    res = os.system("python -m mimicbot activate --forge-pipeline")
-    if res != 0:
-        raise typer.Exit(1)
+    if discord_bot:
+        res = os.system("python -m mimicbot activate --forge-pipeline")
+        if res != 0:
+            raise typer.Exit(1)
+    else:
+        res = os.system("python -m mimicbot chat --forge-pipeline")
+        if res != 0:
+            raise typer.Exit(1)
 
 
 @app.command(name="poduction_env")
@@ -756,11 +764,103 @@ def chat(
     ),
 ):
     """Activates the discord bot with a trained mimicbot model."""
+    
+    typer.secho("Chat ready, start chatting with the bot!", fg=typer.colors.GREEN)
+
     config_parser = utils.callback_config()
+    
     model_saves: list[types.ModelSave] = json.loads(
         config_parser.get("huggingface", "model_saves"))
     model_idx = 0
     if not forge_pipeline:
         model_idx = utils.prompt_model_save()
     model_save = model_saves[model_idx]
-    start_mimic(model_save)
+
+    HF_TOKEN = utils.current_config("huggingface", "api_key")
+    AMT_OF_CONTEXT = int(model_save["context_length"])
+    EOS_TOKEN = "<|endoftext|>"
+    MODEL_ID = "/".join(model_save["url"].split("/")[-2:])
+    MODEL_NAME = model_save["url"].split("/")[-1:][0]
+    members_df = pd.read_csv(str(Path(model_save["data_path"]) / "members.csv"))
+
+    def messages_into_input(messages: list, members_df):
+        messages_df_columns = ["content"]
+        context_data = [
+            [message]
+            for message in messages
+        ]
+        
+        context_df = pd.DataFrame(
+            columns=messages_df_columns, data=context_data)
+        context_df = data_preprocessing.clean_df(context_df, members_df)
+        
+        return EOS_TOKEN.join(list(context_df["content"])) + EOS_TOKEN
+
+
+    chat_history = [" " for i in range(AMT_OF_CONTEXT)]
+    speaker_bot = False
+    def respond(response):
+        text = f"\r({MODEL_NAME}): {response}{spacing}"[:250]
+        text = typer.style(
+            text, fg=typer.colors.BLUE)
+        sys.stdout.write(text)
+        sys.stdout.flush()
+        # push response to the start of the chat history
+        chat_history.insert(0, response)
+    def temp_responce(response):
+        text = f"\r({MODEL_NAME}) WRITING: {response}{spacing}"[:100]
+        text = typer.style(
+            text, fg=typer.colors.YELLOW)
+        sys.stdout.write(text)
+        sys.stdout.flush()
+    spacing = " ".join(["" for i in range(250)])
+    while True:
+        if speaker_bot:
+            context_messages = chat_history[:AMT_OF_CONTEXT]
+            payload_text = messages_into_input(
+                context_messages, members_df)
+            # create a string of spaces equal to the context length
+            
+            temp_responce(payload_text)
+
+            query_res = utils.query(payload_text, HF_TOKEN, EOS_TOKEN, MODEL_ID)
+            attempts = 0
+
+            temp_responce(query_res)
+
+            while "error" in query_res.keys() and attempts <= 3:
+                # wait for model to load and try again
+                if query_res["error"] == "Empty input is invalid":
+                    break
+                time_to_load = int(int(query_res["estimated_time"]) * 1.3)
+                
+                temp_responce(f"Waiting for model to load. Will take {time_to_load}s")
+                
+                sleep(time_to_load)
+                query_res = utils.query(payload_text, HF_TOKEN, EOS_TOKEN, MODEL_ID)
+                
+                temp_responce(query_res)
+
+                attempts += 1
+
+            if attempts > 3:
+                respond("🤖(failed to load, please try again later)")
+                speaker_bot = False
+                continue
+                
+
+                
+            elif "error" in query_res.keys() and query_res["error"] == "Empty input is invalid":
+                respond("...")
+                speaker_bot = False
+                continue
+            else:
+                response = query_res["generated_text"]
+                respond(response)
+                speaker_bot = False
+                continue
+        else:
+            response = typer.prompt("\n(You)")
+            typer.echo("")
+            chat_history.insert(0, response)
+            speaker_bot = True
