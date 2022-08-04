@@ -425,7 +425,7 @@ def preprocess_data(
         help="Path to mimicbot config."
     ),
     session_path: str = typer.Option(
-        utils.session_path(utils.callback_config()),
+        utils.try_session_path(),
         "--session-path",
         "-sp",
         prompt="Enter the path to the session data",
@@ -719,7 +719,7 @@ def standardize_data(
 
     ),
     output_dir: str = typer.Option(
-        utils.session_path(utils.callback_config()),
+        utils.try_session_path(),
         "--output_dir",
         "-od",
         prompt="\nDirectory to output standardized files",

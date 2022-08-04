@@ -39,6 +39,7 @@ If you are still interested in deploying with this repository you can do so by e
 ## Todo 
 (Feel free to contribute)
 - [x] Incorporate github actions to run the pytest tests.
+- [ ] Enable bots to mention users in the channel.
 - [ ] More error handling.
 - [ ] Linux support.
 - [ ] Add linting.

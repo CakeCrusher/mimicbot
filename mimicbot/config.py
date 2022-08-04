@@ -24,8 +24,28 @@ def init_config(app_path: Path = APP_DIR_PATH):
         config_file_path = app_path / "config.ini"
         if not config_file_path.exists():
             config_file_path.touch(exist_ok=True)
-            config_file_path.write_text(
-                "[general]\ndata_path = \nsession = \n\n[discord]\napi_key = \nguild = \ntarget_user = \n\n[huggingface]\napi_key = \nmodel_name = \nmodel_saves = []\n\n[training]\ncontext_window = \ncontext_length = \ntest_perc = ")
+            config_parser = configparser.ConfigParser()
+            config_parser["general"] = {
+                "data_path": "",
+                "session": ""
+            }
+            config_parser["discord"] = {
+                "api_key": "",
+                "guild": "",
+                "target_user": ""
+            }
+            config_parser["huggingface"] = {
+                "api_key": "",
+                "model_name": "",
+                "model_saves": []
+            }
+            config_parser["training"] = {
+                "context_window": "",
+                "context_length": "",
+                "test_perc": ""
+            }
+            with config_file_path.open("w") as config_file:
+                config_parser.write(config_file)
     except OSError:
         return FILE_ERROR
 

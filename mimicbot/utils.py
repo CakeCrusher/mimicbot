@@ -96,6 +96,11 @@ def session_path(config: configparser.ConfigParser) -> Path:
     SESSION_DATA_PATH = Path(DATA_PATH) / Path(GUILD) / Path(SESSION_NAME)
     return SESSION_DATA_PATH
 
+def try_session_path(app_path: Path = APP_DIR_PATH):
+    try:
+        return session_path(callback_config(app_path))
+    except FileNotFoundError:
+        return None
 
 def add_model_save(app_path, model_save: types.ModelSave):
     config_parser = configparser.ConfigParser()
