@@ -1,5 +1,8 @@
 import configparser
 from random import random
+from time import sleep
+from types import NoneType
+from numpy import spacing
 import typer
 from mimicbot import (
     ERROR,
@@ -23,18 +26,195 @@ from mimicbot.bot.mine import data_mine
 from mimicbot.bot.mimic import start_mimic
 from pathlib import Path
 import os
+import sys
 import click
 import json
 import datetime
 from huggingface_hub import get_full_repo_name
 import shutil
+import pandas as pd
 
 
 app = typer.Typer()
 
 
-@app.command()
-def init(
+@app.command(name="init_custom")
+def init_custom(
+    app_path: str = typer.Option(
+        str(config.APP_DIR_PATH),
+        "--app-path",
+        "-ap",
+        help="(WARNING: do not change)\nPath to mimicbot config and user data.",
+        callback=utils.app_path_verifier,
+    ),
+    session: str = typer.Option(
+        utils.current_config("general", "session",
+                             default=str(utils.datetime_str())),
+        "--session",
+        "-s",
+        prompt="\nSession name for organization in the data path",
+        help="Session name for organization in the data path.",
+    ),
+    data_path: str = typer.Option(
+        utils.current_config("general", "data_path",
+                             default=str(config.APP_DIR_PATH / "data")),
+        "--data-path",
+        "-dp",
+        prompt="\nPath to save mimicbot's server data and (AI) model saves",
+        help="Path to save mimicbot's server data and (AI) model saves.",
+    ),
+    target_user: str = typer.Option(
+        utils.current_config("discord", "target_user"),
+        "--target-user",
+        "-tu",
+        prompt="""\n(Provide the name, not the id, of the user)\nName of the user to mimic.\nTarget user""",
+        help="Name of the user to mimic.",
+    ),
+    huggingface_api_key: str = typer.Option(
+        utils.current_config("huggingface", "api_key"),
+        "--huggingface-api-key",
+        "-hak",
+        prompt="\nGuide to retrieving huggingface API key: https://github.com/CakeCrusher/mimicbot#retrieving-huggingface-api-token \nEnter your huggingface API key",
+        help="Huggingface's write key to upload models to your account.",
+    ),
+    huggingface_model_name: str = typer.Option(
+        utils.current_config("huggingface", "model_name",
+                             default=f"mimicbot-{str(int(random() * 1000))}"),
+        "--huggingface-model-name",
+        "-hmn",
+        prompt="\nName of your model(AI system which will produce text that mimics the user) to be uploaded and fine-tuned in Huggingface.\nName of the model",
+        help="Name of your model(AI system which will produce text that mimics the user) to be uploaded and fine-tuned in Huggingface.",
+    ),
+    messages_path: str = typer.Option(
+        ...,
+        "--messages_path",
+        "-messp",
+        prompt="\nPath to custom messages file",
+        help="Path to custom messages file.",
+        callback=utils.path_verifier,
+    ),
+    members_path=typer.Option(
+        "",
+        "--members_path",
+        "-memp",
+        prompt="\n(optional)\nPath to members info file",
+        help="Path to members info file.",
+    ),
+    author_id_column: str = typer.Option(
+        ...,
+        "--author_id_column",
+        "-aic",
+        prompt="\nName of author column in your custom messages file",
+        help="Name of author column in your custom messages file.",
+
+    ),
+    content_column: str = typer.Option(
+        ...,
+        "--content_column",
+        "-cc",
+        prompt="\nName of content(message) column in your custom messages file",
+        help="Name of content(message) column in your custom messages file.",
+    ),
+    output_dir: str = typer.Option(
+        None,
+        "--output_dir",
+        "-od",
+        help="Directory to output standardized files.",
+    ),
+    forge_pipeline: bool = typer.Option(
+        False,
+        "--forge-pipeline",
+        "-fp",
+        help="Is running forge command.",
+    ),
+) -> None:
+    """Initialize and set the config variables for using mimicbot independently of any platform. Requires message data."""
+
+    typer.echo(f"app_path: {app_path}")
+    app_path = Path(app_path)
+    config.init_app(app_path, Path(data_path))
+    config.general_config(app_path, data_path, session)
+    config.discord_config(
+        app_path,
+        utils.current_config("discord", "api_key"),
+        "CUSTOM",
+        target_user
+    )
+    config.huggingface_config(
+        app_path, huggingface_api_key, huggingface_model_name, utils.current_config("huggingface", "model_saves", "[]"))
+
+    utils.session_path(utils.callback_config()).mkdir(parents=True, exist_ok=True)
+
+    if forge_pipeline:
+        output_dir = str(utils.session_path(utils.callback_config()))
+    elif not output_dir:
+        output_dir = typer.prompt(
+            "\nDirectory to output standardized files",
+            default=str(utils.session_path(utils.callback_config())),
+        )
+    
+
+
+    reccomended_settings = typer.confirm(
+        "\nUse reccommended training settings?", default=True)
+    if not reccomended_settings:
+        context_length = 0
+        extrapolate = typer.confirm(
+            "\nData will be extrapolated by creating squentially sensitive context combinations based on the context window\nReccomended if less than 2,000 rows of training data.\nExtrapolate data?", default=True)
+        while int(context_length) < 1:
+            context_length = typer.prompt(
+                f"\n*must be greater than 0\Context length is number of messages to use as context for text generation to use for training and using mimicbot.\nContext length",
+                default=2,
+            )
+            try:
+                context_length = int(context_length)
+            except ValueError:
+                typer.secho("Invalid input. Please enter a number.",
+                            fg=typer.colors.RED)
+        context_window: str or int = ""
+        if extrapolate:
+            context_window = 0
+            while int(context_window) <= context_length:
+                context_window = typer.prompt(
+                    f"\n*must be greater than your context length ({context_length})\nContext window is the number of previous messages to use as reference to build/extrapolate context.\n Context window",
+                    default=6
+                )
+                try:
+                    context_window = int(context_window)
+                except ValueError:
+                    typer.secho("Invalid input. Please enter a number.",
+                                fg=typer.colors.RED)
+        test_perc = 0
+        while float(test_perc) <= 0 or float(test_perc) >= 1:
+            test_perc = typer.prompt(
+                "\n*must be a decimal between 0 and 1\nEnter the percentage of data to use for testing",
+                default=0.1,
+            )
+            try:
+                test_perc = float(test_perc)
+            except ValueError:
+                typer.secho("Invalid input. Please enter a number.",
+                            fg=typer.colors.RED)
+        config.training_config(app_path, str(
+            context_window), str(context_length), str(test_perc))
+    else:
+        config.training_config(app_path, "", "2", "0.1")
+    
+    typer.secho(
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully initialized mimicbot.", fg=typer.colors.GREEN)
+    
+    if forge_pipeline:
+        typer.secho(
+            f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (2/5)", fg=typer.colors.BLUE)
+    saved_at = utils.save_standardized_data(messages_path, members_path, output_dir, author_id_column, content_column)
+    typer.secho(
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully standardized custom data. You can find it here [{str(saved_at)}].", fg=typer.colors.GREEN)
+
+
+
+
+@app.command(name="init_discord")
+def init_discord(
     app_path: str = typer.Option(
         str(config.APP_DIR_PATH),
         "--app-path",
@@ -93,9 +273,15 @@ def init(
         "-hmn",
         prompt="\nName of your model(AI system which will produce text that mimics the user) to be uploaded and fine-tuned in Huggingface.\nName of the model",
         help="Name of your model(AI system which will produce text that mimics the user) to be uploaded and fine-tuned in Huggingface.",
-    )
+    ),
+    forge_pipeline: bool = typer.Option(
+        False,
+        "--forge-pipeline",
+        "-fp",
+        help="Is running forge command.",
+    ),
 ) -> None:
-    """Initialize and set the config variables for mimicbot."""
+    """Initialize and set the config variables for using mimicbot on Discord."""
 
     typer.echo(f"app_path: {app_path}")
     app_path = Path(app_path)
@@ -105,6 +291,8 @@ def init(
                           discord_guild, discord_target_user)
     config.huggingface_config(
         app_path, huggingface_api_key, huggingface_model_name, utils.current_config("huggingface", "model_saves", "[]"))
+
+    utils.session_path(utils.callback_config()).mkdir(parents=True, exist_ok=True)
 
     reccomended_settings = typer.confirm(
         "\nUse reccommended training settings?", default=True)
@@ -213,7 +401,7 @@ def mine(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Begginging to mine data.", fg=typer.colors.BLUE)
     app_path: Path = utils.ensure_app_path(Path(app_path))
 
-    data_path, error = data_mine(app_path / "config.ini")
+    data_path, error = data_mine(app_path / "config.ini", forge_pipeline=True)
     if error:
         if error == MISSING_GUILD_ERROR:
             typer.secho(
@@ -237,10 +425,12 @@ def preprocess_data(
         help="Path to mimicbot config."
     ),
     session_path: str = typer.Option(
-        None,
+        utils.try_session_path(),
         "--session-path",
         "-sp",
-        help="Path to session data."
+        prompt="Enter the path to the session data",
+        help="Path to session data.",
+        callback=utils.path_verifier
     ),
     forge_pipeline: bool = typer.Option(
         False,
@@ -250,15 +440,6 @@ def preprocess_data(
     ),
 ) -> None:
     """Preprocess the data such that it is in a standardized format. Then prepares the data for training."""
-    while not session_path or not Path(session_path).exists():
-        config_parser = utils.callback_config()
-        session_path = utils.session_path(config_parser)
-        if not forge_pipeline:
-            session_path = typer.prompt(
-                f"\nEnter the path to the session data", default=str(session_path)
-            )
-        print("session_path", session_path)
-        print("Path(session_path).exists()", Path(session_path).exists())
 
     session_path = Path(session_path)
     clean_data_path, error = data_preprocessing.clean_messages(session_path)
@@ -421,21 +602,35 @@ def activate_bot(
 
 @app.command(name="forge")
 def forge(
+    discord_bot: bool = typer.Option(
+        True,
+        "--discord-bot",
+        "-db",
+        prompt="\nCreating a discord bot or an independently ran bot (requires custom data).\nForge a discord bot?",
+        help="\nCreating a discord bot or an independently ran bot (requires custom data).",
+    )
 ):
     """All encompassing command to produce a bot from scratch. It runs the following commands in order: init, mine, preprocess, train, activate"""
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (1/5)", fg=typer.colors.BLUE)
-    res = os.system("python -m mimicbot init")
+    if discord_bot:
+        res = os.system("python -m mimicbot init_discord --forge-pipeline")
+    else:
+        res = os.system("python -m mimicbot init_custom --forge-pipeline")
+    
+    session_path = utils.session_path(utils.callback_config())
+    
     if res != 0:
         raise typer.Exit(1)
-    typer.secho(
-        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (2/5)", fg=typer.colors.BLUE)
-    res = os.system("python -m mimicbot mine --forge-pipeline")
-    if res != 0:
-        raise typer.Exit(1)
+    if discord_bot:
+        typer.secho(
+            f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (2/5)", fg=typer.colors.BLUE)
+        res = os.system("python -m mimicbot mine --forge-pipeline")
+        if res != 0:
+            raise typer.Exit(1)
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (3/5)", fg=typer.colors.BLUE)
-    res = os.system("python -m mimicbot preprocess --forge-pipeline")
+    res = os.system(f"python -m mimicbot preprocess --forge-pipeline -sp \"{str(session_path)}\"")
     if res != 0:
         raise typer.Exit(1)
     typer.secho(
@@ -445,9 +640,14 @@ def forge(
         raise typer.Exit(1)
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing final step (5/5)", fg=typer.colors.BLUE)
-    res = os.system("python -m mimicbot activate --forge-pipeline")
-    if res != 0:
-        raise typer.Exit(1)
+    if discord_bot:
+        res = os.system("python -m mimicbot activate --forge-pipeline")
+        if res != 0:
+            raise typer.Exit(1)
+    else:
+        res = os.system("python -m mimicbot chat --forge-pipeline")
+        if res != 0:
+            raise typer.Exit(1)
 
 
 @app.command(name="poduction_env")
@@ -498,3 +698,169 @@ def get_config(
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully printed the config above.",
         fg=typer.colors.GREEN)
+
+
+@app.command(name="standardize_data")
+def standardize_data(
+    messages_path: str = typer.Option(
+        ...,
+        "--messages_path",
+        "-messp",
+        prompt="\nPath to custom messages file",
+        help="Path to custom messages file.",
+
+    ),
+    members_path=typer.Option(
+        "",
+        "--members_path",
+        "-memp",
+        prompt="\n(optional)\nPath to members info file",
+        help="Path to members info file.",
+
+    ),
+    output_dir: str = typer.Option(
+        utils.try_session_path(),
+        "--output_dir",
+        "-od",
+        prompt="\nDirectory to output standardized files",
+        help="Directory to output standardized files.",
+
+    ),
+    author_id_column: str = typer.Option(
+        ...,
+        "--author_id_column",
+        "-aic",
+        prompt="\nName of author column in your custom messages file",
+        help="Name of author column in your custom messages file.",
+
+    ),
+    content_column: str = typer.Option(
+        ...,
+        "--content_column",
+        "-cc",
+        prompt="\nName of content(message) column in your custom messages file",
+        help="Name of content(message) column in your custom messages file.",
+    ),
+):
+    utils.save_standardized_data(messages_path, members_path, output_dir, author_id_column, content_column)
+    typer.secho(
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully standardized data at output directory ({str(output_dir)}).",
+        fg=typer.colors.GREEN
+    )
+
+@app.command(name="chat")
+def chat(
+    model_idx=typer.Option(
+        None,
+        "--model-idx",
+        "-mi",
+        help="Index of the model to be activated."
+    ),
+    forge_pipeline: bool = typer.Option(
+        False,
+        "--forge-pipeline",
+        "-fp",
+        help="Is running forge command.",
+    ),
+):
+    """Activates the discord bot with a trained mimicbot model."""
+    
+    typer.secho("Chat ready, start chatting with the bot!", fg=typer.colors.GREEN)
+
+    config_parser = utils.callback_config()
+    
+    model_saves: list[types.ModelSave] = json.loads(
+        config_parser.get("huggingface", "model_saves"))
+    model_idx = 0
+    if not forge_pipeline:
+        model_idx = utils.prompt_model_save()
+    model_save = model_saves[model_idx]
+
+    HF_TOKEN = utils.current_config("huggingface", "api_key")
+    AMT_OF_CONTEXT = int(model_save["context_length"])
+    EOS_TOKEN = "<|endoftext|>"
+    MODEL_ID = "/".join(model_save["url"].split("/")[-2:])
+    MODEL_NAME = model_save["url"].split("/")[-1:][0]
+    members_df = pd.read_csv(str(Path(model_save["data_path"]) / "members.csv"))
+
+    def messages_into_input(messages: list, members_df):
+        messages_df_columns = ["content"]
+        context_data = [
+            [message]
+            for message in messages
+        ]
+        
+        context_df = pd.DataFrame(
+            columns=messages_df_columns, data=context_data)
+        context_df = data_preprocessing.clean_df(context_df, members_df)
+        
+        return EOS_TOKEN.join(list(context_df["content"])) + EOS_TOKEN
+
+
+    chat_history = [" " for i in range(AMT_OF_CONTEXT)]
+    speaker_bot = False
+    def respond(response):
+        text = f"\r({MODEL_NAME}): {response}{spacing}"[:250]
+        text = typer.style(
+            text, fg=typer.colors.BLUE)
+        sys.stdout.write(text)
+        sys.stdout.flush()
+        # push response to the start of the chat history
+        chat_history.insert(0, response)
+    def temp_responce(response):
+        text = f"\r({MODEL_NAME}) WRITING: {response}{spacing}"[:100]
+        text = typer.style(
+            text, fg=typer.colors.YELLOW)
+        sys.stdout.write(text)
+        sys.stdout.flush()
+    spacing = " ".join(["" for i in range(250)])
+    while True:
+        if speaker_bot:
+            context_messages = chat_history[:AMT_OF_CONTEXT]
+            payload_text = messages_into_input(
+                context_messages, members_df)
+            # create a string of spaces equal to the context length
+            
+            temp_responce(payload_text)
+
+            query_res = utils.query(payload_text, HF_TOKEN, EOS_TOKEN, MODEL_ID)
+            attempts = 0
+
+            temp_responce(query_res)
+
+            while "error" in query_res.keys() and attempts <= 3:
+                # wait for model to load and try again
+                if query_res["error"] == "Empty input is invalid":
+                    break
+                time_to_load = int(int(query_res["estimated_time"]) * 1.3)
+                
+                temp_responce(f"Waiting for model to load. Will take {time_to_load}s")
+                
+                sleep(time_to_load)
+                query_res = utils.query(payload_text, HF_TOKEN, EOS_TOKEN, MODEL_ID)
+                
+                temp_responce(query_res)
+
+                attempts += 1
+
+            if attempts > 3:
+                respond("🤖(failed to load, please try again later)")
+                speaker_bot = False
+                continue
+                
+
+                
+            elif "error" in query_res.keys() and query_res["error"] == "Empty input is invalid":
+                respond("...")
+                speaker_bot = False
+                continue
+            else:
+                response = query_res["generated_text"]
+                respond(response)
+                speaker_bot = False
+                continue
+        else:
+            response = typer.prompt("\n(You)")
+            typer.echo("")
+            chat_history.insert(0, response)
+            speaker_bot = True

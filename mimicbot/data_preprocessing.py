@@ -79,44 +79,42 @@ def clean_df(raw_messages_df: pd.DataFrame, members_df: pd.DataFrame) -> pd.Data
     raw_messages_df["content"] = raw_messages_df["content"].apply(
         lambda x: x.replace("\n", " "))
 
-    # convert timestamp to uniform datetime
-    raw_messages_df["timestamp"] = pd.to_datetime(
-        raw_messages_df["timestamp"])
+    # # convert timestamp to uniform datetime
+    # raw_messages_df["timestamp"] = pd.to_datetime(
+    #     raw_messages_df["timestamp"])
 
-    # uniformly order by timestamp
-    ordered_df = pd.DataFrame(columns=raw_messages_df.columns)
-    for channel in raw_messages_df["channel"].unique():
-        channel_messages = raw_messages_df[raw_messages_df["channel"] == channel]
-        channel_messages = channel_messages.sort_values(by="timestamp")
-        # POTENTIALLY PROBLEMATIC vvv
-        ordered_df = pd.concat(
-            [ordered_df, channel_messages], ignore_index=True)
-    raw_messages_df = ordered_df
+    # # uniformly order by timestamp
+    # ordered_df = pd.DataFrame(columns=raw_messages_df.columns)
+    # for channel in raw_messages_df["channel"].unique():
+    #     channel_messages = raw_messages_df[raw_messages_df["channel"] == channel]
+    #     channel_messages = channel_messages.sort_values(by="timestamp")
+    #     ordered_df = pd.concat(
+    #         [ordered_df, channel_messages], ignore_index=True)
+    # raw_messages_df = ordered_df
+    raw_messages_df = raw_messages_df.iloc[::-1]
 
     return raw_messages_df
 
 
-def clean_messages(data_path: Path) -> Path:
-    if not data_path.exists():
+def clean_messages(session_path: Path) -> Path:
+    if not session_path.exists():
         return (Path(""), DIR_ERROR)
 
-    raw_messages_data = pd.read_csv(data_path / "raw_messages.csv")
-    members_df = pd.read_csv(data_path / "members.csv")
+    raw_messages_data = pd.read_csv(session_path / "raw_messages.csv")
+    members_df = pd.read_csv(session_path / "members.csv")
 
     raw_messages_data = clean_df(raw_messages_data, members_df)
 
     # save data
-    raw_messages_data.to_csv(data_path / "cleaned_messages.csv", index=False)
+    raw_messages_data.to_csv(
+        session_path / "cleaned_messages.csv", index=False)
 
-    return (data_path / "cleaned_messages.csv", SUCCESS)
+    return (session_path / "cleaned_messages.csv", SUCCESS)
 
 
 def package_data_for_training(cleaned_messages_path: Path, app_path: Path = config.APP_DIR_PATH) -> Path:
     config_parser = ConfigParser()
     config_parser.read(app_path / "config.ini")
-    print("cleaned_messages_path", cleaned_messages_path)
-    GUILD = config_parser.get("discord", "guild")
-    SESSION_NAME = config_parser.get("general", "session")
     AUTHOR_NAME = config_parser.get("discord", "target_user")
     AMT_OF_CONTEXT = int(config_parser.get("training", "context_length"))
     TEST_PERC = float(config_parser.get("training", "test_perc"))
@@ -128,7 +126,7 @@ def package_data_for_training(cleaned_messages_path: Path, app_path: Path = conf
         AUTHOR_ID = members_df[members_df["name"] == AUTHOR_NAME]["id"].iloc[0]
     except IndexError:
         return (Path(""), USER_NAME_ERROR)
-    unique_channels = cleaned_messages["channel"].unique()
+    # unique_channels = cleaned_messages["channel"].unique()
     # progress_bar = tqdm(range(len(cleaned_messages)-7*len(unique_channels)))
 
     context_for_base_df = AMT_OF_CONTEXT
@@ -137,18 +135,18 @@ def package_data_for_training(cleaned_messages_path: Path, app_path: Path = conf
         context_for_base_df = CONTEXT_WINDOW
 
     response_and_context = []
-    for channel in unique_channels:
-        channel_messages = cleaned_messages[cleaned_messages["channel"] == channel]
-        channel_messages = channel_messages.reset_index(drop=True)
-        # iterate through each row of channelMessages
-        for index, row in channel_messages[context_for_base_df:].iterrows():
-            if row["author_id"] == int(AUTHOR_ID):
-                row_response_and_context = []
-                for i in range(index, index-context_for_base_df-1, -1):
-                    row_response_and_context.append(
-                        channel_messages.iloc[i].content)
-                response_and_context.append(row_response_and_context)
-            # progress_bar.update(1)
+    # for channel in unique_channels:
+    #     channel_messages = cleaned_messages[cleaned_messages["channel"] == channel]
+    #     channel_messages = channel_messages.reset_index(drop=True)
+    # iterate through each row of channelMessages
+    for index, row in cleaned_messages[context_for_base_df:].iterrows():
+        if row["author_id"] == int(AUTHOR_ID):
+            row_response_and_context = []
+            for i in range(index, index-context_for_base_df-1, -1):
+                row_response_and_context.append(
+                    cleaned_messages.iloc[i].content)
+            response_and_context.append(row_response_and_context)
+        # progress_bar.update(1)
 
     response_and_context_columns = ["response"] + \
         ["context" + str(i+1) for i in range(context_for_base_df)]
@@ -177,7 +175,7 @@ def package_data_for_training(cleaned_messages_path: Path, app_path: Path = conf
 
     train_data.to_csv(
         str(training_data_dir / "train.csv"), index=False)
-    
+
     args = Args()
     # if test data does not have any rows add a row
     if len(test_data) < args.per_gpu_train_batch_size:

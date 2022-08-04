@@ -196,3 +196,26 @@ tutorial
       eval_loss = eval_loss / nb_eval_steps
     ZeroDivisionError: float division by zero
   requirements section
+discord-independent-mimic
+  create a command for converting data into propper format
+    propper format
+      contains only content and author_id
+      in order from most recent to oldest (top to down)
+    will also contain a members file if it does not exist
+  adapt the preprocess command and the train command to use the propper format
+  option at init for wether it is an independent bot
+    True = path to messages file
+    False = continue to discord settings
+  step mine data will be skipped if True
+  mine will convert raw_data to raw_template_messages
+
+  introduced possibility of context to be pulled from different channel at channel splits 
+
+  will need to change init dramatically
+    will change all discord inputs into a callback inside the custom training data
+    should i make a new init command
+  need to eliminate dependance on guild for path
+  need to change target user to be "general" not "discord"
+  the messages context may be fed in reverse
+connect the files for mimicbot and mimicbot-deploy
+to have a single source of truth

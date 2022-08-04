@@ -1,10 +1,15 @@
 import configparser
 import datetime
+import requests
 from pathlib import Path
+from types import NoneType
+from typing import Tuple
 import typer
 from mimicbot import config, __app_name__, types
 from collections.abc import Callable
 import json
+import numpy as np
+import pandas as pd
 
 APP_DIR_PATH = Path(typer.get_app_dir(__app_name__))
 
@@ -48,6 +53,15 @@ def app_path_verifier(app_path_str: str) -> None:
     return app_path_str
 
 
+def path_verifier(param: typer.CallbackParam, path_str: str) -> Path:
+    path = Path(path_str)
+    while not path.exists():
+        typer.secho(f"Path ({path}) does not exist.", fg=typer.colors.RED)
+        path = typer.prompt(f"Enter new {param.name}")
+        path = Path(path)
+    return path
+
+
 def datetime_str():
     return datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
 
@@ -82,6 +96,11 @@ def session_path(config: configparser.ConfigParser) -> Path:
     SESSION_DATA_PATH = Path(DATA_PATH) / Path(GUILD) / Path(SESSION_NAME)
     return SESSION_DATA_PATH
 
+def try_session_path(app_path: Path = APP_DIR_PATH):
+    try:
+        return session_path(callback_config(app_path))
+    except FileNotFoundError:
+        return None
 
 def add_model_save(app_path, model_save: types.ModelSave):
     config_parser = configparser.ConfigParser()
@@ -124,3 +143,62 @@ def prompt_model_save() -> int:
             typer.secho(
                 "The number you entered does not match any model.", fg=typer.colors.RED)
     return model_idx
+
+
+def standardize_data(messages: pd.DataFrame, members: pd.DataFrame, author_id_column: str, content_column: str, skip_naming: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    standard_messages = pd.DataFrame(columns=["author_id", "content"], data=messages[[
+                                     author_id_column, content_column]].values)
+    missing_members = list(
+        set(messages[author_id_column].unique()) - set(members["id"].unique()))
+    while bool(len(missing_members)):
+        random_member_name = f'Human-{np.random.randint(100, 999)}'
+        if skip_naming:
+            member_name = random_member_name
+        else:
+            member_name = typer.prompt(
+                f'\nEnter name for member with id ({missing_members[0]})', default=random_member_name)
+        members = pd.concat(
+            [
+                members,
+                pd.DataFrame(columns=['id', 'name'], data=[
+                             [missing_members[0], member_name]])
+            ],
+            ignore_index=True
+        )
+
+        missing_members = list(
+            set(messages[author_id_column].unique()) - set(members["id"].unique()))
+
+    return (standard_messages, members)
+
+def save_standardized_data(messages_path: str, members_path: str, output_dir: str, author_id_column: str, content_column: str) -> Path:
+    messages = pd.read_csv(messages_path)
+    try:
+        members = pd.read_csv(members_path)
+    except:
+        members = pd.DataFrame(columns=['id', 'name'])
+    output_dir = Path(output_dir)
+
+    standard_messages, standard_members = standardize_data(
+        messages, members, author_id_column, content_column)
+
+    standard_messages.to_csv(output_dir / 'raw_messages.csv', index=False)
+    standard_members.to_csv(output_dir / 'members.csv', index=False)
+
+    return output_dir
+
+def query(payload_input, HF_TOKEN: str, EOS_TOKEN: str, MODEL_ID: str):
+    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+    API_URL = f"https://api-inference.huggingface.co/models/{MODEL_ID}"
+    messages_list = payload_input.split(EOS_TOKEN)[:-1]
+    payload = {
+        "inputs": {
+            "past_user_inputs": messages_list[:-1],
+            "generated_responses": [],
+            "text": messages_list[-1],
+        }
+    }
+    payload_dump = json.dumps(payload)
+    response = requests.request(
+        "POST", API_URL, headers=headers, data=payload_dump)
+    return json.loads(response.content.decode("utf-8"))

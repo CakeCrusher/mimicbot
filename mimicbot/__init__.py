@@ -1,6 +1,8 @@
 __app_name__ = "mimicbot"
 __version__ = "0.0.1"
 
+# must init config file here
+
 (
     SUCCESS,
     UNKNOWN_ERROR,
@@ -30,7 +32,6 @@ ERROR = {
     GPU_ERROR: "GPU_ERROR",
     ABORT: "ABORT",
 }
-
 
 class Args():
     def __init__(self):

@@ -1,7 +1,6 @@
 import os
 import discord
 from discord.ext import commands
-import requests
 import pandas as pd
 import json
 from mimicbot import (
@@ -37,9 +36,9 @@ def start_mimic(model_save: types.ModelSave):
     bot = commands.Bot(intents=intents, command_prefix="!")
 
     def messages_into_input(messages, members_df):
-        messages_df_columns = ["content", "timestamp", "channel"]
+        messages_df_columns = ["content"]
         context_data = [
-            [message.content, message.created_at, message.channel.name]
+            [message.content]
             for message in messages
         ]
 
@@ -59,21 +58,6 @@ def start_mimic(model_save: types.ModelSave):
 
         return EOS_TOKEN.join(list(context_df["content"])) + EOS_TOKEN
 
-    def query(payload_input):
-        headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-        API_URL = f"https://api-inference.huggingface.co/models/{MODEL_ID}"
-        messages_list = payload_input.split(EOS_TOKEN)[:-1]
-        payload = {
-            "inputs": {
-                "past_user_inputs": messages_list[:-1],
-                "generated_responses": [],
-                "text": messages_list[-1],
-            }
-        }
-        payload_dump = json.dumps(payload)
-        response = requests.request(
-            "POST", API_URL, headers=headers, data=payload_dump)
-        return json.loads(response.content.decode("utf-8"))
 
     @bot.event
     async def on_ready():
@@ -103,7 +87,7 @@ def start_mimic(model_save: types.ModelSave):
                     context_messages, members_df)
                 typer.echo(
                     f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) {payload_text}")
-                query_res = query(payload_text)
+                query_res = utils.query(payload_text, HF_TOKEN, EOS_TOKEN, MODEL_ID)
                 attempts = 0
                 typer.echo(
                     f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) {query_res}")
@@ -115,7 +99,7 @@ def start_mimic(model_save: types.ModelSave):
                     typer.secho(
                         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Waiting for model to load. Will take {time_to_load}s", fg=typer.colors.YELLOW)
                     await asyncio.sleep(time_to_load)
-                    query_res = query(payload_text)
+                    query_res = utils.query(payload_text, HF_TOKEN, EOS_TOKEN, MODEL_ID)
                     typer.echo(
                         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) {query_res}")
                     attempts += 1
