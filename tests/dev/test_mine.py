@@ -41,7 +41,7 @@ class TestMine:
         parsed_config.read(str(mock_config_path))
         runner = CliRunner()
         app_path = mock_config_path.parent
-        result = runner.invoke(cli.app, ["mine", "--app-path", app_path])
+        result = runner.invoke(cli.app, ["mine", "--forge-pipeline", "--app-path", app_path])
 
         data_path = app_path / "data" / \
             parsed_config.get("discord", "guild") / \

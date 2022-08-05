@@ -1,6 +1,5 @@
 import configparser
 import datetime
-import requests
 from pathlib import Path
 from types import NoneType
 from typing import Tuple
@@ -96,11 +95,13 @@ def session_path(config: configparser.ConfigParser) -> Path:
     SESSION_DATA_PATH = Path(DATA_PATH) / Path(GUILD) / Path(SESSION_NAME)
     return SESSION_DATA_PATH
 
+
 def try_session_path(app_path: Path = APP_DIR_PATH):
     try:
         return session_path(callback_config(app_path))
     except FileNotFoundError:
         return None
+
 
 def add_model_save(app_path, model_save: types.ModelSave):
     config_parser = configparser.ConfigParser()
@@ -171,6 +172,7 @@ def standardize_data(messages: pd.DataFrame, members: pd.DataFrame, author_id_co
 
     return (standard_messages, members)
 
+
 def save_standardized_data(messages_path: str, members_path: str, output_dir: str, author_id_column: str, content_column: str) -> Path:
     messages = pd.read_csv(messages_path)
     try:
@@ -186,19 +188,3 @@ def save_standardized_data(messages_path: str, members_path: str, output_dir: st
     standard_members.to_csv(output_dir / 'members.csv', index=False)
 
     return output_dir
-
-def query(payload_input, HF_TOKEN: str, EOS_TOKEN: str, MODEL_ID: str):
-    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-    API_URL = f"https://api-inference.huggingface.co/models/{MODEL_ID}"
-    messages_list = payload_input.split(EOS_TOKEN)[:-1]
-    payload = {
-        "inputs": {
-            "past_user_inputs": messages_list[:-1],
-            "generated_responses": [],
-            "text": messages_list[-1],
-        }
-    }
-    payload_dump = json.dumps(payload)
-    response = requests.request(
-        "POST", API_URL, headers=headers, data=payload_dump)
-    return json.loads(response.content.decode("utf-8"))
