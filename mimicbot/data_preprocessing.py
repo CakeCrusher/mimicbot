@@ -55,7 +55,7 @@ def package_data_for_training(cleaned_messages_path: Path, app_path: Path = conf
     #     channel_messages = channel_messages.reset_index(drop=True)
     # iterate through each row of channelMessages
     for index, row in cleaned_messages[context_for_base_df:].iterrows():
-        if row["author_id"] == int(AUTHOR_ID):
+        if row["author_id"] == AUTHOR_ID:
             row_response_and_context = []
             for i in range(index, index-context_for_base_df-1, -1):
                 row_response_and_context.append(
