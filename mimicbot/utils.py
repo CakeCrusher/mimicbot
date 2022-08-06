@@ -152,12 +152,12 @@ def standardize_data(messages: pd.DataFrame, members: pd.DataFrame, author_id_co
     missing_members = list(
         set(messages[author_id_column].unique()) - set(members["id"].unique()))
     while bool(len(missing_members)):
-        random_member_name = f'Human-{np.random.randint(100, 999)}'
+        name_as_id = missing_members[0]
         if skip_naming:
-            member_name = random_member_name
+            member_name = name_as_id
         else:
             member_name = typer.prompt(
-                f'\nEnter name for member with id ({missing_members[0]})', default=random_member_name)
+                f'\nMay be the same as id.\nEnter name for member with id ({missing_members[0]})', default=name_as_id)
         members = pd.concat(
             [
                 members,

@@ -217,5 +217,11 @@ discord-independent-mimic
   need to eliminate dependance on guild for path
   need to change target user to be "general" not "discord"
   the messages context may be fed in reverse
-connect the files for mimicbot and mimicbot-deploy
-to have a single source of truth
+  connect the files for mimicbot and mimicbot-deploy
+  to have a single source of truth
+
+  fix enter name for member with id by having the default be the id
+  create a pip package for mimicbot-chat
+  allow bots to mention
+  create a pip package for mimicbot
+
