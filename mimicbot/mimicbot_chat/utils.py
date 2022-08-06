@@ -5,9 +5,6 @@ import json
 from time import sleep
 
 
-from mimicbot import types
-
-
 def clean_df(raw_messages_df: pd.DataFrame, members_df: pd.DataFrame) -> pd.DataFrame:
 
     # replace na rows with empty strings
@@ -94,14 +91,14 @@ def clean_df(raw_messages_df: pd.DataFrame, members_df: pd.DataFrame) -> pd.Data
     return raw_messages_df
 
 
-def messages_into_input(messages: list, members_df, platform: types.Platform = types.Platform.NONE, bot=None, eos_token: str = "<|endoftext|>") -> str:
+def messages_into_input(messages: list, members_df, platform: str = 'none', bot=None, eos_token: str = "<|endoftext|>") -> str:
     messages_df_columns = ["content"]
     context_data = [
         [message]
         for message in messages
     ]
 
-    if platform == types.Platform.DISCORD:
+    if platform == 'discord':
         # remove first mention of bot from each message
         for idx, context_data_ins in enumerate(context_data):
             message = context_data_ins[0]
@@ -135,7 +132,7 @@ def query(payload_input, HF_TOKEN: str, EOS_TOKEN: str, MODEL_ID: str):
     return json.loads(response.content.decode("utf-8"))
 
 
-async def respond_to_message(context_messages: list, members_df: pd.DataFrame, respond, log_respond, model_id: str, hf_token: str, EOS_TOKEN: str = "<|endoftext|>", platform: types.Platform = types.Platform.NONE, bot=None):
+async def respond_to_message(context_messages: list, members_df: pd.DataFrame, respond, log_respond, model_id: str, hf_token: str, EOS_TOKEN: str = "<|endoftext|>", platform: str = 'none', bot=None):
     payload_text = messages_into_input(
         context_messages, members_df, platform=platform, bot=bot)
     # create a string of spaces equal to the context length

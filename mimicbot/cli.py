@@ -401,7 +401,8 @@ def mine(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Begginging to mine data.", fg=typer.colors.BLUE)
     app_path: Path = utils.ensure_app_path(Path(app_path))
 
-    data_path, error = data_mine(app_path / "config.ini", forge_pipeline=forge_pipeline)
+    data_path, error = data_mine(
+        app_path / "config.ini", forge_pipeline=forge_pipeline)
     if error:
         if error == MISSING_GUILD_ERROR:
             typer.secho(
