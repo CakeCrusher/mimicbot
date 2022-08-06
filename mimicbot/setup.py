@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='mimicbot_chat',
-    version='1.0.0',
+    version='1.1.0',
     description='Chat utils for mimicbot',
     url='https://github.com/CakeCrusher/mimicbot/tree/master/mimicbot/mimicbot_chat',
     author='Sebastian Sosa',

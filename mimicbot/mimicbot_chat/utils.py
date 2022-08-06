@@ -170,5 +170,14 @@ async def respond_to_message(context_messages: list, members_df: pd.DataFrame, r
         response: str = query_res["generated_text"]
         if response.strip() == "":
             response = "..."
+
+        if platform == 'discord':
+            # allow bot to mention members
+            for _idx, member in members_df.iterrows():
+                if member["name"] in response:
+                    response = response.replace("Hi", f"Hi @{member['name']}")
+                    response = response.replace(
+                        member["name"], f"<@{member['id']}>")
+
         await respond(response)
         return
