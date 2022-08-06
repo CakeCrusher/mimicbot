@@ -7,8 +7,8 @@ import os
 import typer
 import numpy as np
 
-from mimicbot import (SUCCESS, DIR_ERROR, USER_NAME_ERROR, config, Args)
-from mimicbot.mimicbot_chat.utils import clean_df
+from mimicbot_cli import (SUCCESS, DIR_ERROR, USER_NAME_ERROR, config, Args)
+from mimicbot_cli.mimicbot_chat.utils import clean_df
 
 
 def clean_messages(session_path: Path) -> Path:

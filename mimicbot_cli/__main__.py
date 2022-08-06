@@ -1,4 +1,4 @@
-from mimicbot import cli, __app_name__
+from mimicbot_cli import cli, __app_name__
 
 def main():
   cli.app(prog_name=__app_name__)

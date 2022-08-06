@@ -4,7 +4,7 @@ from pathlib import Path
 from types import NoneType
 from typing import Tuple
 import typer
-from mimicbot import config, __app_name__, types
+from mimicbot_cli import config, __app_name__, types
 from collections.abc import Callable
 import json
 import numpy as np
@@ -99,7 +99,8 @@ def session_path(config: configparser.ConfigParser) -> Path:
 def try_session_path(app_path: Path = APP_DIR_PATH):
     try:
         return session_path(callback_config(app_path))
-    except FileNotFoundError:
+    # except (FileNotFoundError, configparser.NoSectionError):
+    except: # to be safe
         return None
 
 

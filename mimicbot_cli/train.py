@@ -41,7 +41,7 @@ from transformers import (
 from datasets import load_metric
 from huggingface_hub import create_repo, HfApi, get_full_repo_name
 import pdb
-from mimicbot import (
+from mimicbot_cli import (
     config,
     utils,
     API_KEY_ERROR,

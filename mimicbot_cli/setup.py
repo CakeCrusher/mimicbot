@@ -4,7 +4,7 @@ setup(
     name='mimicbot_chat',
     version='1.1.0',
     description='Chat utils for mimicbot',
-    url='https://github.com/CakeCrusher/mimicbot/tree/master/mimicbot/mimicbot_chat',
+    url='https://github.com/CakeCrusher/mimicbot/tree/master/mimicbot_cli/mimicbot_chat',
     author='Sebastian Sosa',
     author_email='1sebastian1sosa1@gmail.com',
     license='MIT License',

@@ -1,7 +1,7 @@
 import pdb
 from pathlib import Path
 import pytest
-from mimicbot import (
+from mimicbot_cli import (
     __app_name__,
     cli,
     utils,
@@ -85,7 +85,7 @@ class TestInit:
     #     assert f"Session name" in result.stdout
     #     assert "Aborted!" in result.stdout
     def test_no_override(self, tmp_path, session, data_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key, huggingface_model_name, context_length, context_window, test_perc):
-        app_path = tmp_path / "mimicbot"
+        app_path = tmp_path / "mimicbot_cli"
         config.init_app(app_path)
         result = runner.invoke(
             cli.app, ["init_discord", "--app-path", app_path], input="n\n")
@@ -93,7 +93,7 @@ class TestInit:
         assert "Aborted!" in result.stdout
 
     def test_create_file(self, tmp_path, session, data_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key, huggingface_model_name, context_length, context_window, test_perc):
-        app_path = tmp_path / "mimicbot"
+        app_path = tmp_path / "mimicbot_cli"
         data_path = app_path / "data"
         config_path = app_path / "config.ini"
         print("!!SESSION:", session)
@@ -107,7 +107,7 @@ class TestInit:
                                 session, discord_api_key, huggingface_api_key, False)
 
     def test_create_file_with_training(self, tmp_path, session, data_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key, huggingface_model_name, context_length, context_window, test_perc):
-        app_path = tmp_path / "mimicbot"
+        app_path = tmp_path / "mimicbot_cli"
         data_path = app_path / "data"
         config_path = app_path / "config.ini"
 
@@ -120,7 +120,7 @@ class TestInit:
                                 session, discord_api_key, huggingface_api_key, context_length)
 
     def test_create_file_forced(self, tmp_path, session, data_path, discord_api_key, discord_guild, discord_target_user, huggingface_api_key, huggingface_model_name, context_length, context_window, test_perc):
-        app_path = tmp_path / "mimicbot"
+        app_path = tmp_path / "mimicbot_cli"
         data_path = app_path / "data"
         config_path = app_path / "config.ini"
 

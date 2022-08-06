@@ -1,7 +1,7 @@
 # TODO: only works if you have mimicbot set up
 
 import pytest
-from mimicbot import (
+from mimicbot_cli import (
     __app_name__,
     cli,
     config,

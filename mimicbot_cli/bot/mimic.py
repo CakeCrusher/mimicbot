@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 import pandas as pd
 import json
-from mimicbot import (
+from mimicbot_cli import (
     config,
     utils,
     data_preprocessing,
@@ -15,7 +15,7 @@ import pdb
 from pathlib import Path
 import typer
 import datetime
-import mimicbot.mimicbot_chat.utils as chat_utils
+import mimicbot_cli.mimicbot_chat.utils as chat_utils
 
 
 def start_mimic(model_save: types.ModelSave):
