@@ -1,5 +1,4 @@
-from setuptools import setup
-
+from setuptools import setup, find_packages
 setup(
     name='mimicbot_cli',
     version='1.0.0',
@@ -8,7 +7,8 @@ setup(
     author='Sebastian Sosa',
     author_email='1sebastian1sosa1@gmail.com',
     license='MIT License',
-    packages=['mimicbot_cli'],
+    packages=find_packages(),
+    exclude=['tests'],
     install_requires=[
         'configparser',
         'typer',
@@ -19,12 +19,16 @@ setup(
         'torchvision',
         'torchaudio',
         'requests',
-        'discord.py',
         'transformers',
         'datasets',
         'rouge-score',
         'tqdm',
+        'discord.py==1.7.3',
+        'aiohttp==3.7.4',
+        'tensorboard',
+        'ipywidgets',
     ],
+    package_data={'mimicbot_cli.huggingface': ['*.md']},
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',

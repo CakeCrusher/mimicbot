@@ -33,6 +33,7 @@ def start_mimic(model_save: types.ModelSave):
     async def on_ready():
         typer.secho(f'\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) {bot.user} has been activated.',
                     fg=typer.colors.GREEN)
+        typer.secho("If its the first time loading up the model, it may take a while on its first response.", fg=typer.colors.YELLOW)
 
     @bot.event
     async def on_message(message):

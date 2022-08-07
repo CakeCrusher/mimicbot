@@ -199,7 +199,7 @@ def init_custom(
         typer.secho(
             f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (2/5)", fg=typer.colors.BLUE)
     saved_at = utils.save_standardized_data(
-        messages_path, members_path, output_dir, author_id_column, content_column)
+        messages_path, members_path, output_dir, author_id_column, content_column, forge_pipeline)
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully standardized custom data. You can find it here [{str(saved_at)}].", fg=typer.colors.GREEN)
 
@@ -610,11 +610,18 @@ def chat(
         "-fp",
         help="Is running forge command.",
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Prints the chat logs.",
+    ),
 ):
     """Activates the discord bot with a trained mimicbot model."""
 
     typer.secho("Chat ready, start chatting with the bot!",
                 fg=typer.colors.GREEN)
+    typer.secho("If its the first time loading up the model, it may take a while on its first response.\nUse the \"--verbose\" flag to see the chat logs.", fg=typer.colors.YELLOW)
 
     config_parser = utils.callback_config()
 
@@ -639,10 +646,8 @@ def chat(
 
     chat_history = [" " for i in range(AMT_OF_CONTEXT)]
 
-    spacing = " ".join(["" for i in range(250)])
-
     async def respond(response):
-        text = f"\r({MODEL_NAME}): {response}{spacing}"[:250]
+        text = f"({MODEL_NAME}): {response}\n"
         text = typer.style(
             text, fg=typer.colors.BLUE)
         sys.stdout.write(text)
@@ -651,11 +656,12 @@ def chat(
         chat_history.insert(0, response)
 
     def temp_respond(response):
-        text = f"\r({MODEL_NAME}) WRITING: {response}{spacing}"[:100]
-        text = typer.style(
-            text, fg=typer.colors.YELLOW)
-        sys.stdout.write(text)
-        sys.stdout.flush()
+        if (isinstance(response, dict) and "estimated_time" in response) or verbose:
+            text = f"({MODEL_NAME}) WRITING: {response}\n"
+            text = typer.style(
+                text, fg=typer.colors.YELLOW)
+            sys.stdout.write(text)
+            sys.stdout.flush()
 
     speaker_bot = False
     while True:
