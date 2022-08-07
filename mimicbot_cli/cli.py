@@ -1,15 +1,9 @@
 import configparser
 from random import random
-from types import NoneType
-from numpy import spacing
 import typer
-from mimicbot import (
+from mimicbot_cli import (
     ERROR,
     __app_name__,
-    SUCCESS,
-    DIR_ERROR,
-    FILE_ERROR,
-    API_KEY_ERROR,
     MISSING_GUILD_ERROR,
     GPU_ERROR,
     CHANGE_VALUE,
@@ -19,15 +13,13 @@ from mimicbot import (
     train,
     types,
 )
-from configparser import ConfigParser
 
-from mimicbot.bot.mine import data_mine
-from mimicbot.bot.mimic import start_mimic
-import mimicbot.mimicbot_chat.utils as chat_utils
+from mimicbot_cli.bot.mine import data_mine
+from mimicbot_cli.bot.mimic import start_mimic
+import mimicbot_cli.mimicbot_chat.utils as chat_utils
 from pathlib import Path
 import os
 import sys
-import click
 import json
 import datetime
 from huggingface_hub import get_full_repo_name
@@ -207,7 +199,7 @@ def init_custom(
         typer.secho(
             f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (2/5)", fg=typer.colors.BLUE)
     saved_at = utils.save_standardized_data(
-        messages_path, members_path, output_dir, author_id_column, content_column)
+        messages_path, members_path, output_dir, author_id_column, content_column, forge_pipeline)
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully standardized custom data. You can find it here [{str(saved_at)}].", fg=typer.colors.GREEN)
 
@@ -401,7 +393,8 @@ def mine(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Begginging to mine data.", fg=typer.colors.BLUE)
     app_path: Path = utils.ensure_app_path(Path(app_path))
 
-    data_path, error = data_mine(app_path / "config.ini", forge_pipeline=forge_pipeline)
+    data_path, error = data_mine(
+        app_path / "config.ini", forge_pipeline=forge_pipeline)
     if error:
         if error == MISSING_GUILD_ERROR:
             typer.secho(
@@ -503,7 +496,7 @@ def train_model(
 
         if (error == CHANGE_VALUE):
             typer.secho(
-                f"Error: Please change model name.\nYou may do so with the following command < python -m mimicbot set -mn MODEL_NAME_HERE >", fg=typer.colors.RED)
+                f"Error: Please change model name.\nYou may do so with the following command < python -m mimicbot_cli set -mn MODEL_NAME_HERE >", fg=typer.colors.RED)
             raise typer.Exit(1)
         elif (error == GPU_ERROR):
             typer.secho(
@@ -617,11 +610,18 @@ def chat(
         "-fp",
         help="Is running forge command.",
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Prints the chat logs.",
+    ),
 ):
     """Activates the discord bot with a trained mimicbot model."""
 
     typer.secho("Chat ready, start chatting with the bot!",
                 fg=typer.colors.GREEN)
+    typer.secho("If its the first time loading up the model, it may take a while on its first response.\nUse the \"--verbose\" flag to see the chat logs.", fg=typer.colors.YELLOW)
 
     config_parser = utils.callback_config()
 
@@ -646,10 +646,8 @@ def chat(
 
     chat_history = [" " for i in range(AMT_OF_CONTEXT)]
 
-    spacing = " ".join(["" for i in range(250)])
-
     async def respond(response):
-        text = f"\r({MODEL_NAME}): {response}{spacing}"[:250]
+        text = f"({MODEL_NAME}): {response}\n"
         text = typer.style(
             text, fg=typer.colors.BLUE)
         sys.stdout.write(text)
@@ -658,11 +656,12 @@ def chat(
         chat_history.insert(0, response)
 
     def temp_respond(response):
-        text = f"\r({MODEL_NAME}) WRITING: {response}{spacing}"[:100]
-        text = typer.style(
-            text, fg=typer.colors.YELLOW)
-        sys.stdout.write(text)
-        sys.stdout.flush()
+        if (isinstance(response, dict) and "estimated_time" in response) or verbose:
+            text = f"({MODEL_NAME}) WRITING: {response}\n"
+            text = typer.style(
+                text, fg=typer.colors.YELLOW)
+            sys.stdout.write(text)
+            sys.stdout.flush()
 
     speaker_bot = False
     while True:
@@ -693,9 +692,9 @@ def forge(
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (1/5)", fg=typer.colors.BLUE)
     if discord_bot:
-        res = os.system("python -m mimicbot init_discord --forge-pipeline")
+        res = os.system("python -m mimicbot_cli init_discord --forge-pipeline")
     else:
-        res = os.system("python -m mimicbot init_custom --forge-pipeline")
+        res = os.system("python -m mimicbot_cli init_custom --forge-pipeline")
 
     session_path = utils.session_path(utils.callback_config())
 
@@ -704,28 +703,28 @@ def forge(
     if discord_bot:
         typer.secho(
             f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (2/5)", fg=typer.colors.BLUE)
-        res = os.system("python -m mimicbot mine --forge-pipeline")
+        res = os.system("python -m mimicbot_cli mine --forge-pipeline")
         if res != 0:
             raise typer.Exit(1)
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (3/5)", fg=typer.colors.BLUE)
     res = os.system(
-        f"python -m mimicbot preprocess --forge-pipeline -sp \"{str(session_path)}\"")
+        f"python -m mimicbot_cli preprocess --forge-pipeline -sp \"{str(session_path)}\"")
     if res != 0:
         raise typer.Exit(1)
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing step (4/5)", fg=typer.colors.BLUE)
-    res = os.system("python -m mimicbot train --forge-pipeline")
+    res = os.system("python -m mimicbot_cli train --forge-pipeline")
     if res != 0:
         raise typer.Exit(1)
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initializing final step (5/5)", fg=typer.colors.BLUE)
     if discord_bot:
-        res = os.system("python -m mimicbot activate --forge-pipeline")
+        res = os.system("python -m mimicbot_cli activate --forge-pipeline")
         if res != 0:
             raise typer.Exit(1)
     else:
-        res = os.system("python -m mimicbot chat --forge-pipeline")
+        res = os.system("python -m mimicbot_cli chat --forge-pipeline")
         if res != 0:
             raise typer.Exit(1)
 

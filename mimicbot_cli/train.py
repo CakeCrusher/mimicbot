@@ -1,7 +1,5 @@
 import glob
-from lib2to3.pgen2 import token
 import logging
-from multiprocessing.connection import Client
 import os
 import pickle
 import random
@@ -28,7 +26,6 @@ from requests.exceptions import HTTPError
 from pathlib import Path
 
 from transformers import (
-    MODEL_WITH_LM_HEAD_MAPPING,
     WEIGHTS_NAME,
     AdamW,
     AutoConfig,
@@ -40,9 +37,7 @@ from transformers import (
 )
 from datasets import load_metric
 from huggingface_hub import create_repo, HfApi, get_full_repo_name
-import pdb
-from mimicbot import (
-    config,
+from mimicbot_cli import (
     utils,
     API_KEY_ERROR,
     CHANGE_VALUE,

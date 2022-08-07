@@ -222,6 +222,7 @@ discord-independent-mimic
 
   fix enter name for member with id by having the default be the id
   create a pip package for mimicbot-chat
+    update mimicbot-deploy
   allow bots to mention
   create a pip package for mimicbot
-
+  fix tests on github actions

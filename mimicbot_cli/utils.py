@@ -1,13 +1,10 @@
 import configparser
 import datetime
 from pathlib import Path
-from types import NoneType
 from typing import Tuple
 import typer
-from mimicbot import config, __app_name__, types
-from collections.abc import Callable
+from mimicbot_cli import config, __app_name__, types
 import json
-import numpy as np
 import pandas as pd
 
 APP_DIR_PATH = Path(typer.get_app_dir(__app_name__))
@@ -99,7 +96,8 @@ def session_path(config: configparser.ConfigParser) -> Path:
 def try_session_path(app_path: Path = APP_DIR_PATH):
     try:
         return session_path(callback_config(app_path))
-    except FileNotFoundError:
+    # except (FileNotFoundError, configparser.NoSectionError):
+    except:  # to be safe
         return None
 
 
@@ -169,11 +167,19 @@ def standardize_data(messages: pd.DataFrame, members: pd.DataFrame, author_id_co
 
         missing_members = list(
             set(messages[author_id_column].unique()) - set(members["id"].unique()))
+    members["id"] = members["id"].astype(str)
+    target_user = current_config('discord', 'target_user')
+    if skip_naming and members[members["name"] == target_user].empty:
+        target_user_id = None
+        while members[members["id"] == target_user_id].empty:
+            target_user_id = typer.prompt(
+                f"\nEnter id of user to target ({target_user})", default=members["id"].iloc[0])
+        members.loc[members["id"] == target_user_id, "name"] = target_user
 
     return (standard_messages, members)
 
 
-def save_standardized_data(messages_path: str, members_path: str, output_dir: str, author_id_column: str, content_column: str) -> Path:
+def save_standardized_data(messages_path: str, members_path: str, output_dir: str, author_id_column: str, content_column: str, forge_pipeline: bool = False) -> Path:
     messages = pd.read_csv(messages_path)
     try:
         members = pd.read_csv(members_path)
@@ -182,7 +188,7 @@ def save_standardized_data(messages_path: str, members_path: str, output_dir: st
     output_dir = Path(output_dir)
 
     standard_messages, standard_members = standardize_data(
-        messages, members, author_id_column, content_column)
+        messages, members, author_id_column, content_column, forge_pipeline)
 
     standard_messages.to_csv(output_dir / 'raw_messages.csv', index=False)
     standard_members.to_csv(output_dir / 'members.csv', index=False)

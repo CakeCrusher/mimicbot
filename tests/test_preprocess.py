@@ -1,6 +1,6 @@
 import configparser
 import pytest
-from mimicbot import (
+from mimicbot_cli import (
     __app_name__,
     cli,
     config,

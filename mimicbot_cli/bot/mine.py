@@ -1,5 +1,3 @@
-import os
-import pdb
 import discord
 import pandas as pd
 from pathlib import Path
@@ -7,7 +5,7 @@ from configparser import ConfigParser
 from typing import Tuple
 import typer
 
-from mimicbot import (  # pylint: disable=[import-error]
+from mimicbot_cli import (  # pylint: disable=[import-error]
     SUCCESS, UNKNOWN_ERROR, API_KEY_ERROR, MISSING_GUILD_ERROR, ABORT, utils
 )
 

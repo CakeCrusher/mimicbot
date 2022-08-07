@@ -5,16 +5,10 @@ import json
 from time import sleep
 
 
-from mimicbot import types
-
-
 def clean_df(raw_messages_df: pd.DataFrame, members_df: pd.DataFrame) -> pd.DataFrame:
 
-    # replace na rows with empty strings
-    raw_messages_df["content"] = raw_messages_df["content"].apply(
-        lambda x:
-        x if pd.notnull(x) else " "
-    )
+    # drop all rows with empty content
+    raw_messages_df = raw_messages_df[raw_messages_df["content"].notnull()].copy()
 
     # replace urls
     url_regex = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
@@ -89,19 +83,24 @@ def clean_df(raw_messages_df: pd.DataFrame, members_df: pd.DataFrame) -> pd.Data
     #     ordered_df = pd.concat(
     #         [ordered_df, channel_messages], ignore_index=True)
     # raw_messages_df = ordered_df
+
+    # get rid of empty content again
+    raw_messages_df["content"] = raw_messages_df["content"].apply(lambda x: x if len(str(x).strip()) else None)
+    raw_messages_df = raw_messages_df[raw_messages_df["content"].notnull()].copy()
+
     raw_messages_df = raw_messages_df.iloc[::-1]
 
     return raw_messages_df
 
 
-def messages_into_input(messages: list, members_df, platform: types.Platform = types.Platform.NONE, bot=None, eos_token: str = "<|endoftext|>") -> str:
+def messages_into_input(messages: list, members_df, platform: str = 'none', bot=None, eos_token: str = "<|endoftext|>") -> str:
     messages_df_columns = ["content"]
     context_data = [
         [message]
         for message in messages
     ]
 
-    if platform == types.Platform.DISCORD:
+    if platform == 'discord':
         # remove first mention of bot from each message
         for idx, context_data_ins in enumerate(context_data):
             message = context_data_ins[0]
@@ -135,7 +134,7 @@ def query(payload_input, HF_TOKEN: str, EOS_TOKEN: str, MODEL_ID: str):
     return json.loads(response.content.decode("utf-8"))
 
 
-async def respond_to_message(context_messages: list, members_df: pd.DataFrame, respond, log_respond, model_id: str, hf_token: str, EOS_TOKEN: str = "<|endoftext|>", platform: types.Platform = types.Platform.NONE, bot=None):
+async def respond_to_message(context_messages: list, members_df: pd.DataFrame, respond, log_respond, model_id: str, hf_token: str, EOS_TOKEN: str = "<|endoftext|>", platform: str = 'none', bot=None):
     payload_text = messages_into_input(
         context_messages, members_df, platform=platform, bot=bot)
     # create a string of spaces equal to the context length
@@ -173,5 +172,14 @@ async def respond_to_message(context_messages: list, members_df: pd.DataFrame, r
         response: str = query_res["generated_text"]
         if response.strip() == "":
             response = "..."
+
+        if platform == 'discord':
+            # allow bot to mention members
+            for _idx, member in members_df.iterrows():
+                if member["name"] in response:
+                    response = response.replace("Hi", f"Hi @{member['name']}")
+                    response = response.replace(
+                        member["name"], f"<@{member['id']}>")
+
         await respond(response)
         return

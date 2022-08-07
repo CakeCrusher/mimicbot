@@ -1,21 +1,13 @@
-import os
-from platform import platform
 import discord
 from discord.ext import commands
 import pandas as pd
-import json
-from mimicbot import (
-    config,
+from mimicbot_cli import (
     utils,
-    data_preprocessing,
     types,
 )
-import asyncio
-import pdb
-from pathlib import Path
 import typer
 import datetime
-import mimicbot.mimicbot_chat.utils as chat_utils
+import mimicbot_cli.mimicbot_chat.utils as chat_utils
 
 
 def start_mimic(model_save: types.ModelSave):
@@ -41,6 +33,7 @@ def start_mimic(model_save: types.ModelSave):
     async def on_ready():
         typer.secho(f'\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) {bot.user} has been activated.',
                     fg=typer.colors.GREEN)
+        typer.secho("If its the first time loading up the model, it may take a while on its first response.", fg=typer.colors.YELLOW)
 
     @bot.event
     async def on_message(message):

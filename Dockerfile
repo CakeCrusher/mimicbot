@@ -18,6 +18,6 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-RUN mkdir /root/.config /root/.config/mimicbot
+RUN mkdir /root/.config /root/.config/mimicbot_cli
 
 RUN echo "#### NOTE: View Dockerfile to see some recommended commands ####"
