@@ -6,6 +6,9 @@ It consists of a pipeline that creates the bot from scratch, along with multiple
 
 https://user-images.githubusercontent.com/37946988/182276645-67ecd78a-b1b0-417f-b0e9-162f0efea30d.mp4
 
+## New
+You can now create a mimicbot independent of the discord platform.
+
 ## Important Commands
 Type `python -m mimicbot_cli --help` to see a list of commands. Similarly you can use `python -m mimicbot_cli <A_MIMICBOT_COMMAND> --help` to see details on a specific command.
  
@@ -39,7 +42,7 @@ If you are still interested in deploying with this repository you can do so by e
 ## Todo 
 (Feel free to contribute)
 - [x] Incorporate github actions to run the pytest tests.
-- [ ] Enable bots to mention users in the channel.
+- [x] Enable bots to mention users in the channel.
 - [ ] More error handling.
 - [ ] Linux support.
 - [ ] Add linting.
