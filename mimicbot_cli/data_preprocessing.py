@@ -1,10 +1,7 @@
-import re
 from configparser import ConfigParser
 import pandas as pd
 from pathlib import Path
-import os
 # from tqdm.auto import tqdm
-import typer
 import numpy as np
 
 from mimicbot_cli import (SUCCESS, DIR_ERROR, USER_NAME_ERROR, config, Args)

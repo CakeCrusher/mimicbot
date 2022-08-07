@@ -1,13 +1,10 @@
 import configparser
 import datetime
 from pathlib import Path
-from types import NoneType
 from typing import Tuple
 import typer
 from mimicbot_cli import config, __app_name__, types
-from collections.abc import Callable
 import json
-import numpy as np
 import pandas as pd
 
 APP_DIR_PATH = Path(typer.get_app_dir(__app_name__))

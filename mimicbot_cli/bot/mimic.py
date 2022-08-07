@@ -1,18 +1,10 @@
-import os
-from platform import platform
 import discord
 from discord.ext import commands
 import pandas as pd
-import json
 from mimicbot_cli import (
-    config,
     utils,
-    data_preprocessing,
     types,
 )
-import asyncio
-import pdb
-from pathlib import Path
 import typer
 import datetime
 import mimicbot_cli.mimicbot_chat.utils as chat_utils

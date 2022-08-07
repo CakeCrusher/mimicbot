@@ -7,11 +7,8 @@ from time import sleep
 
 def clean_df(raw_messages_df: pd.DataFrame, members_df: pd.DataFrame) -> pd.DataFrame:
 
-    # replace na rows with empty strings
-    raw_messages_df["content"] = raw_messages_df["content"].apply(
-        lambda x:
-        x if pd.notnull(x) else " "
-    )
+    # drop all rows with empty content
+    raw_messages_df = raw_messages_df[raw_messages_df["content"].notnull()].copy()
 
     # replace urls
     url_regex = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
@@ -86,6 +83,11 @@ def clean_df(raw_messages_df: pd.DataFrame, members_df: pd.DataFrame) -> pd.Data
     #     ordered_df = pd.concat(
     #         [ordered_df, channel_messages], ignore_index=True)
     # raw_messages_df = ordered_df
+
+    # get rid of empty content again
+    raw_messages_df["content"] = raw_messages_df["content"].apply(lambda x: x if len(str(x).strip()) else None)
+    raw_messages_df = raw_messages_df[raw_messages_df["content"].notnull()].copy()
+
     raw_messages_df = raw_messages_df.iloc[::-1]
 
     return raw_messages_df

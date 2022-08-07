@@ -1,5 +1,3 @@
-import os
-import pdb
 import discord
 import pandas as pd
 from pathlib import Path

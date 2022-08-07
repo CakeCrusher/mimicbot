@@ -1,15 +1,9 @@
 import configparser
 from random import random
-from types import NoneType
-from numpy import spacing
 import typer
 from mimicbot_cli import (
     ERROR,
     __app_name__,
-    SUCCESS,
-    DIR_ERROR,
-    FILE_ERROR,
-    API_KEY_ERROR,
     MISSING_GUILD_ERROR,
     GPU_ERROR,
     CHANGE_VALUE,
@@ -19,7 +13,6 @@ from mimicbot_cli import (
     train,
     types,
 )
-from configparser import ConfigParser
 
 from mimicbot_cli.bot.mine import data_mine
 from mimicbot_cli.bot.mimic import start_mimic
@@ -27,7 +20,6 @@ import mimicbot_cli.mimicbot_chat.utils as chat_utils
 from pathlib import Path
 import os
 import sys
-import click
 import json
 import datetime
 from huggingface_hub import get_full_repo_name
