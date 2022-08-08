@@ -82,7 +82,7 @@ def init_custom(
         ...,
         "--messages_path",
         "-messp",
-        prompt="\nPath to custom messages file",
+        prompt="\n*Must be in \".csv\" format.\n*Must contain a author column and a content(messages) column.\nPath to custom messages file",
         help="Path to custom messages file.",
         callback=utils.path_verifier,
     ),
@@ -90,7 +90,7 @@ def init_custom(
         "",
         "--members_path",
         "-memp",
-        prompt="\n(optional)\nPath to members info file",
+        prompt="\n(optional)\nMust contain two columns: \"id\" and \"name\"\nPath to members info file",
         help="Path to members info file.",
     ),
     author_id_column: str = typer.Option(
@@ -105,8 +105,8 @@ def init_custom(
         ...,
         "--content_column",
         "-cc",
-        prompt="\nName of content(message) column in your custom messages file",
-        help="Name of content(message) column in your custom messages file.",
+        prompt="\nName of content(messages) column in your custom messages file",
+        help="Name of content(messages) column in your custom messages file.",
     ),
     output_dir: str = typer.Option(
         None,
