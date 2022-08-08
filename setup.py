@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
     name='mimicbot_cli',
-    version='1.0.0',
+    version='1.0.1',
     description='Tools and a pipeline for creating of an AI chat bot modeled to imitate a user',
     url='https://github.com/CakeCrusher/mimicbot',
     author='Sebastian Sosa',
