@@ -23,8 +23,14 @@ Type `python -m mimicbot_cli --help` to see a list of commands. Similarly you ca
 
 ### Note
 If you run into any issues, you dont know how to deal with. Utilize the mimicbot [Dockerfile](https://github.com/CakeCrusher/mimicbot/blob/master/Dockerfile) to [spin up a functional environment](https://github.com/CakeCrusher/mimicbot#spining-up-docker-environement).
-
 ### Steps
+1. Run `pip install mimicbot-cli`.
+2. Run the command `python -m mimicbot_cli forge`. This command will guide you through the creation of the bot from start to finish.
+3. Opt to build a Discord bot.
+4. Once the mimicbot is activated on discord, you can interact with it by simply sending it a message as you would to the person it is imitating, with a `@<NAME_OF_MIMICBOT>` mention somewhere in the text. The mimicbot will then reply with a message similar to how the original user would have said it.
+
+
+### Contribute
 1. Clone the repository `git clone https://github.com/CakeCrusher/mimicbot.git`
 2. Navigate into the cloned directory `cd mimicbot`
 3. Install the dependencies `pip install -r requirements.txt`. If you have [CUDA](https://developer.nvidia.com/cuda-downloads) installed use  `pip install -r requirements-gpu.txt` instead. (WARNING: the dependencies will consume a lot of space. If you have an environment with pytorch already installed it is advisable that you use that environment.)
