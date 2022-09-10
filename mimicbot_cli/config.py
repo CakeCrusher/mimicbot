@@ -84,7 +84,7 @@ def discord_config(app_path: Path, api_key: str, guild: str, target_user: str):
         config.write(config_file)
 
 
-def huggingface_config(app_path: Path, api_key: str, model_name: str, model_saves: str):
+def huggingface_config(app_path: Path, api_key: str, model_name: str, model_saves: str, large_language_model: str):
     config = configparser.ConfigParser()
     try:
         config.read(str(app_path / "config.ini"))
@@ -95,6 +95,10 @@ def huggingface_config(app_path: Path, api_key: str, model_name: str, model_save
     config.set("huggingface", "api_key", api_key)
     config.set("huggingface", "model_name", model_name)
     config.set("huggingface", "model_saves", model_saves)
+    if large_language_model != "microsoft/DialoGPT-small" and large_language_model != "bigscience/bloom-560m":
+        raise ValueError(
+            f"Large language model \"{large_language_model}\" not supported")
+    config.set("huggingface", "large_language_model", large_language_model)
     with open(str(app_path / "config.ini"), "w") as config_file:
         config.write(config_file)
 

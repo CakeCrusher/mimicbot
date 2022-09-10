@@ -114,12 +114,20 @@ def init_custom(
         "-od",
         help="Directory to output standardized files.",
     ),
+    large_language_model: str = typer.Option(
+        utils.current_config(
+            "huggingface", "large_language_model", "microsoft/DialoGPT-small"),
+        "--large_language_model",
+        "-llm",
+        help="What large language model to fine-tune on. Options: \"microsoft/DialoGPT-small\", \"bigscience/bloom-560m\""
+    ),
     forge_pipeline: bool = typer.Option(
         False,
         "--forge-pipeline",
         "-fp",
         help="Is running forge command.",
     ),
+
 ) -> None:
     """Initialize and set the config variables for using mimicbot independently of any platform. Requires message data."""
 
@@ -134,7 +142,7 @@ def init_custom(
         target_user
     )
     config.huggingface_config(
-        app_path, huggingface_api_key, huggingface_model_name, utils.current_config("huggingface", "model_saves", "[]"))
+        app_path, huggingface_api_key, huggingface_model_name, utils.current_config("huggingface", "model_saves", "[]"), large_language_model)
 
     utils.session_path(utils.callback_config()).mkdir(
         parents=True, exist_ok=True)
@@ -265,6 +273,13 @@ def init_discord(
         prompt="\nName of your model(AI system which will produce text that mimics the user) to be uploaded and fine-tuned in Huggingface.\nName of the model",
         help="Name of your model(AI system which will produce text that mimics the user) to be uploaded and fine-tuned in Huggingface.",
     ),
+    large_language_model: str = typer.Option(
+        utils.current_config(
+            "huggingface", "large_language_model", "microsoft/DialoGPT-small"),
+        "--large_language_model",
+        "-llm",
+        help="What large language model to fine-tune on. Options: \"microsoft/DialoGPT-small\", \"bigscience/bloom-560m\""
+    ),
     forge_pipeline: bool = typer.Option(
         False,
         "--forge-pipeline",
@@ -281,7 +296,7 @@ def init_discord(
     config.discord_config(app_path, discord_api_key,
                           discord_guild, discord_target_user)
     config.huggingface_config(
-        app_path, huggingface_api_key, huggingface_model_name, utils.current_config("huggingface", "model_saves", "[]"))
+        app_path, huggingface_api_key, huggingface_model_name, utils.current_config("huggingface", "model_saves", "[]"), large_language_model)
 
     utils.session_path(utils.callback_config()).mkdir(
         parents=True, exist_ok=True)

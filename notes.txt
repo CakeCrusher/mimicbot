@@ -226,3 +226,11 @@ discord-independent-mimic
   allow bots to mention
   create a pip package for mimicbot
   fix tests on github actions
+
+  BLOOM
+    add a config for LLM
+    make conditional train cli command
+    add train file
+    isolate model creation and pushing
+    verify pipeline works
+    clean up bloom output
