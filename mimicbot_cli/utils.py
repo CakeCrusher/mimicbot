@@ -1,9 +1,16 @@
+from datasets import load_metric
+from transformers import AutoConfig, AutoModelWithLMHead, AutoModelForCausalLM, AutoTokenizer
+import numpy as np
+from urllib.error import HTTPError
+import os
+from mimicbot_cli import Args, API_KEY_ERROR, CHANGE_VALUE
+from huggingface_hub import create_repo, HfApi, get_full_repo_name
 import configparser
 import datetime
 from pathlib import Path
 from typing import Tuple
 import typer
-from mimicbot_cli import config, __app_name__, types
+from mimicbot_cli import config, __app_name__, types, SUCCESS, API_KEY_ERROR, CHANGE_VALUE
 import json
 import pandas as pd
 
@@ -195,11 +202,6 @@ def save_standardized_data(messages_path: str, members_path: str, output_dir: st
 
     return output_dir
 
-from transformers import AutoConfig, AutoModelWithLMHead, AutoModelForCausalLM, AutoTokenizer
-from huggingface_hub import create_repo, HfApi, get_full_repo_name
-from mimicbot_cli import Args, API_KEY_ERROR, CHANGE_VALUE
-import os
-from urllib.error import HTTPError
 
 def get_model(args: Args, LARGE_LANGUAGE_MODEL: str, MODEL_NAME: str, HUGGINGFACE_API_KEY: str):
     if LARGE_LANGUAGE_MODEL == "microsoft/DialoGPT-small":
@@ -219,20 +221,21 @@ def get_model(args: Args, LARGE_LANGUAGE_MODEL: str, MODEL_NAME: str, HUGGINGFAC
             use_auth_token=HUGGINGFACE_API_KEY,
         )
 
-def initialize_model(args: Args, HUGGINGFACE_API_KEY: str, LARGE_LANGUAGE_MODEL: str, MODEL_TO: str) -> str: # MODEL_FROM
-    print("Initializing model...")
+
+def initialize_model(args: Args, HUGGINGFACE_API_KEY: str, LARGE_LANGUAGE_MODEL: str, MODEL_TO: str) -> str:
     try:
         config = AutoConfig.from_pretrained(
             LARGE_LANGUAGE_MODEL, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
-        
-        model = get_model(args, LARGE_LANGUAGE_MODEL, MODEL_TO, HUGGINGFACE_API_KEY)
+
+        model = get_model(args, LARGE_LANGUAGE_MODEL,
+                          MODEL_TO, HUGGINGFACE_API_KEY)
 
         MODEL_FROM = MODEL_TO
     except OSError:
         MODEL_FROM = LARGE_LANGUAGE_MODEL
     except ValueError:
-        raise ValueError("Huggingface API key is invalid")
-        # return (f"https://huggingface.co/{args.save_to}", API_KEY_ERROR)
+        # raise ValueError("Huggingface API key is invalid")
+        return (f"https://huggingface.co/{args.save_to}", API_KEY_ERROR)
     if MODEL_FROM != MODEL_TO:
         try:
             link_to_repo = create_repo(
@@ -241,7 +244,8 @@ def initialize_model(args: Args, HUGGINGFACE_API_KEY: str, LARGE_LANGUAGE_MODEL:
                 LARGE_LANGUAGE_MODEL, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
             tokenizer = AutoTokenizer.from_pretrained(
                 args.config_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
-            model = get_model(args, LARGE_LANGUAGE_MODEL, MODEL_FROM, HUGGINGFACE_API_KEY).to(args.device)
+            model = get_model(args, LARGE_LANGUAGE_MODEL,
+                              MODEL_FROM, HUGGINGFACE_API_KEY).to(args.device)
             hf_api = HfApi()
             current_dir = os.path.dirname(os.path.abspath(__file__))
             hf_api.upload_file(
@@ -259,26 +263,28 @@ def initialize_model(args: Args, HUGGINGFACE_API_KEY: str, LARGE_LANGUAGE_MODEL:
             typer.secho(
                 f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Huggingface repo initialized at: {link_to_repo}", fg=typer.colors.BLUE)
         except ValueError:
-            raise ValueError("Huggingface API key is invalid")
-            # return (f"https://huggingface.co/{args.save_to}", API_KEY_ERROR)
+            # raise ValueError("Huggingface API key is invalid")
+            return (f"https://huggingface.co/{args.save_to}", API_KEY_ERROR)
         except HTTPError:
             typer.secho(
                 f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Will update repo at: {'https://huggingface.co/'+MODEL_TO}", fg=typer.colors.BLUE)
         except OSError:
             # cannot delete old model so if model is deleted you need to rename model
-            raise OSError("Please rename your model.")
-            # return (f"https://huggingface.co/{args.save_to}", CHANGE_VALUE)
-    
-    return MODEL_FROM
+            # raise OSError("Please rename your model.")
+            return (f"https://huggingface.co/{args.save_to}", CHANGE_VALUE)
 
-from datasets import load_metric
-import numpy as np
+    return (MODEL_FROM, SUCCESS)
+
+
 rouge_score = load_metric("rouge")
+
+
 def computeRouge(labels, preds):
     scores = rouge_score.compute(
         predictions=preds, references=labels
     )
     return ({k: np.round(v.mid.fmeasure*100, 4) for k, v in scores.items()}, labels, preds)
+
 
 def save_to_repo(args, model, message, HUGGINGFACE_API_KEY):
     typer.secho(

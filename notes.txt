@@ -228,9 +228,11 @@ discord-independent-mimic
   fix tests on github actions
 
   BLOOM
-    add a config for LLM
-    make conditional train cli command
-    add train file
+    //add a config for LLM
+    //make conditional train cli command
+    //add train file
     isolate model creation and pushing
+      pad token should be added at initialization of model
+      have the colab trainers install the package
     verify pipeline works
     clean up bloom output

@@ -532,9 +532,10 @@ def train_model(
             HUGGINGFACE_API_KEY = utils.current_config(
                 "huggingface", "api_key")
             MODEL_NAME = utils.current_config("huggingface", "model_name")
+            LARGE_LANGUAGE_MODEL = utils.current_config("huggingface", "large_language_model")
             with open(str(colab_path / ".env"), "w") as f:
                 f.write(
-                    f"HUGGINGFACE_API_KEY={HUGGINGFACE_API_KEY}\nMODEL_NAME={MODEL_NAME}")
+                    f"HUGGINGFACE_API_KEY={HUGGINGFACE_API_KEY}\nMODEL_NAME={MODEL_NAME}\nLARGE_LANGUAGE_MODEL={LARGE_LANGUAGE_MODEL}")
 
             # copy training files and paste into /colab/
             DATA_PATH = utils.current_config("general", "data_path")
