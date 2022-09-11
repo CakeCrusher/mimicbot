@@ -14,6 +14,8 @@ from mimicbot_cli import (
     types,
 )
 
+from mimicbot_cli.train.train_torch import train as train_torch
+from mimicbot_cli.train.train_hf import train as train_hf
 from mimicbot_cli.bot.mine import data_mine
 from mimicbot_cli.bot.mimic import start_mimic
 import mimicbot_cli.mimicbot_chat.utils as chat_utils
@@ -491,8 +493,8 @@ def train_model(
     """Trains the model to immitate the user identified in the config."""
 
     app_path = Path(app_path)
+    config_parser = utils.callback_config()
     while not session_path or not Path(session_path).exists():
-        config_parser = utils.callback_config()
         session_path = utils.session_path(config_parser)
         if not forge_pipeline:
             session_path = typer.prompt(
@@ -503,8 +505,13 @@ def train_model(
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Training model. This may take a while.", fg=typer.colors.YELLOW
     )
+    large_language_model = config_parser.get(
+        "huggingface", "large_language_model")
 
-    res, error = train.train(session_path)
+    if large_language_model == "microsoft/DialoGPT-small":
+        res, error = train_torch(session_path)
+    else:
+        res, error = train_hf(session_path)
 
     if error:
         # create a switch statement
@@ -567,14 +574,13 @@ def train_model(
                 raise typer.Exit(1)
         else:
             raise typer.Exit(1)
-    config_parser = utils.callback_config()
-    context_length = int(config_parser.get("training", "context_length"))
-    model_save = {
-        "url": res,
-        "context_length": context_length,
-        "data_path": str(session_path),
-    }
-    utils.add_model_save(app_path, model_save)
+    # context_length = int(config_parser.get("training", "context_length"))
+    # model_save = {
+    #     "url": res,
+    #     "context_length": context_length,
+    #     "data_path": str(session_path),
+    # }
+    # utils.add_model_save(app_path, model_save)
 
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully trained and saved the model. You can find it here [{str(res)}]",
