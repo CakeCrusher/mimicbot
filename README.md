@@ -6,8 +6,6 @@ https://user-images.githubusercontent.com/37946988/190918228-a46ba035-c8d1-4fd5-
 Mimicbot enables the effortless yet modular creation of an AI chat bot model that  imitates another person's manner of speech. For example, if mimicbot were based on Shakespeare, mimicbot will adjust its responses to elizabethan english.
 It offers a a general pipeline for creating a mimicbot from scratch provided data on the user to mimic, and another pipeline that runs entirely on Discord without the need for external data. The pipeline consists multiple other commands that are also available for modular use.
 
-https://user-images.githubusercontent.com/37946988/182276645-67ecd78a-b1b0-417f-b0e9-162f0efea30d.mp4
-
 ## New
 You can now create a mimicbot independent of the discord platform.
 
