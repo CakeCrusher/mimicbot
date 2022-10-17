@@ -57,6 +57,7 @@ def train(session_path: Path) -> Tuple[str, int]:
     config_parser = utils.callback_config()
     model_name = config_parser.get(
         "huggingface", "model_name")
+    LARGE_LANGUAGE_MODEL = config_parser.get("huggingface", "large_language_model")
     HUGGINGFACE_API_KEY = config_parser.get("huggingface", "api_key")
     MODELS_PATH = session_path.parent.parent / "models"
     SESSION_PATH = session_path
@@ -75,64 +76,65 @@ def train(session_path: Path) -> Tuple[str, int]:
     args.cache_dir = str(CACHE_DIR)
     args.no_cuda = not torch.cuda.is_available()
 
-    try:
-        config = AutoConfig.from_pretrained(
-            args.config_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
-        model = AutoModelWithLMHead.from_pretrained(
-            MODEL_TO,
-            from_tf=False,
-            config=config,
-            cache_dir=args.cache_dir,
-            use_auth_token=HUGGINGFACE_API_KEY,
-        )
-        MODEL_FROM = MODEL_TO
-    except OSError:
-        MODEL_FROM = args.config_name
-    except ValueError:
-        return (f"https://huggingface.co/{args.save_to}", API_KEY_ERROR)
+    # try:
+    #     config = AutoConfig.from_pretrained(
+    #         args.config_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
+    #     model = AutoModelWithLMHead.from_pretrained(
+    #         MODEL_TO,
+    #         from_tf=False,
+    #         config=config,
+    #         cache_dir=args.cache_dir,
+    #         use_auth_token=HUGGINGFACE_API_KEY,
+    #     )
+    #     MODEL_FROM = MODEL_TO
+    # except OSError:
+    #     MODEL_FROM = args.config_name
+    # except ValueError:
+    #     return (f"https://huggingface.co/{args.save_to}", API_KEY_ERROR)
 
+    MODEL_FROM = utils.initialize_model(args, HUGGINGFACE_API_KEY, LARGE_LANGUAGE_MODEL, MODEL_TO)
     typer.secho(f"({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Fine tuning model from: https://huggingface.co/{MODEL_FROM}\n", fg=typer.colors.BLUE)
 
-    # initiate repository
-    if MODEL_FROM != MODEL_TO:
-        try:
-            link_to_repo = create_repo(
-                args.save_to, private=True, token=HUGGINGFACE_API_KEY)
-            config = AutoConfig.from_pretrained(
-                args.config_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
-            tokenizer = AutoTokenizer.from_pretrained(
-                args.config_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
-            model = AutoModelWithLMHead.from_pretrained(
-                args.config_name,
-                from_tf=False,
-                config=config,
-                cache_dir=args.cache_dir,
-                use_auth_token=HUGGINGFACE_API_KEY
-            ).to(args.device)
-            hf_api = HfApi()
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            hf_api.upload_file(
-                path_or_fileobj=str(Path(current_dir) /
-                                    "huggingface/README.md"),
-                path_in_repo="README.md",
-                repo_id=args.save_to,
-                token=HUGGINGFACE_API_KEY)
-            # config.push_to_hub(
-            #     args.model_path, commit_message="init config", use_auth_token=HUGGINGFACE_API_KEY)
-            tokenizer.push_to_hub(
-                args.model_path, commit_message="init tokenizer", use_auth_token=HUGGINGFACE_API_KEY)
-            model.push_to_hub(
-                args.model_path, commit_message="init model", use_auth_token=HUGGINGFACE_API_KEY)
-            typer.secho(
-                f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Huggingface repo initialized at: {link_to_repo}", fg=typer.colors.BLUE)
-        except ValueError:
-            return (f"https://huggingface.co/{args.save_to}", API_KEY_ERROR)
-        except HTTPError:
-            typer.secho(
-                f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Will update repo at: {'https://huggingface.co/'+MODEL_TO}", fg=typer.colors.BLUE)
-        except OSError:
-            # cannot delete old model so if model is deleted you need to rename model
-            return (f"https://huggingface.co/{args.save_to}", CHANGE_VALUE)
+    # # initiate repository
+    # if MODEL_FROM != MODEL_TO:
+    #     try:
+    #         link_to_repo = create_repo(
+    #             args.save_to, private=True, token=HUGGINGFACE_API_KEY)
+    #         config = AutoConfig.from_pretrained(
+    #             args.config_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
+    #         tokenizer = AutoTokenizer.from_pretrained(
+    #             args.config_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
+    #         model = AutoModelWithLMHead.from_pretrained(
+    #             args.config_name,
+    #             from_tf=False,
+    #             config=config,
+    #             cache_dir=args.cache_dir,
+    #             use_auth_token=HUGGINGFACE_API_KEY
+    #         ).to(args.device)
+    #         hf_api = HfApi()
+    #         current_dir = os.path.dirname(os.path.abspath(__file__))
+    #         hf_api.upload_file(
+    #             path_or_fileobj=str(Path(current_dir) /
+    #                                 "huggingface/README.md"),
+    #             path_in_repo="README.md",
+    #             repo_id=args.save_to,
+    #             token=HUGGINGFACE_API_KEY)
+    #         # config.push_to_hub(
+    #         #     args.model_path, commit_message="init config", use_auth_token=HUGGINGFACE_API_KEY)
+    #         tokenizer.push_to_hub(
+    #             args.model_path, commit_message="init tokenizer", use_auth_token=HUGGINGFACE_API_KEY)
+    #         model.push_to_hub(
+    #             args.model_path, commit_message="init model", use_auth_token=HUGGINGFACE_API_KEY)
+    #         typer.secho(
+    #             f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Huggingface repo initialized at: {link_to_repo}", fg=typer.colors.BLUE)
+    #     except ValueError:
+    #         return (f"https://huggingface.co/{args.save_to}", API_KEY_ERROR)
+    #     except HTTPError:
+    #         typer.secho(
+    #             f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Will update repo at: {'https://huggingface.co/'+MODEL_TO}", fg=typer.colors.BLUE)
+    #     except OSError:
+    #         # cannot delete old model so if model is deleted you need to rename model
+    #         return (f"https://huggingface.co/{args.save_to}", CHANGE_VALUE)
 
     args.model_name = MODEL_FROM
     args.tokenizer_name = MODEL_FROM
@@ -209,18 +211,18 @@ def train(session_path: Path) -> Tuple[str, int]:
                 testInput, chatHistoryIds, tokenizer))
         return preds
 
-    def computeRouge(df, model, tokenizer):
-        labels = list(df["response"])
-        preds = makePreds(df, model, tokenizer)
-        scores = rouge_score.compute(
-            predictions=preds, references=labels
-        )
-        return ({k: np.round(v.mid.fmeasure*100, 4) for k, v in scores.items()}, labels, preds)
+    # def computeRouge(df, model, tokenizer):
+    #     labels = list(df["response"])
+    #     preds = makePreds(df, model, tokenizer)
+    #     scores = rouge_score.compute(
+    #         predictions=preds, references=labels
+    #     )
+    #     return ({k: np.round(v.mid.fmeasure*100, 4) for k, v in scores.items()}, labels, preds)
 
     benchmarkDf = val_df.iloc[:30]
 
     config = AutoConfig.from_pretrained(
-        args.config_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
+        LARGE_LANGUAGE_MODEL, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
     tokenizer = AutoTokenizer.from_pretrained(
         args.tokenizer_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
     model = AutoModelWithLMHead.from_pretrained(
@@ -231,18 +233,19 @@ def train(session_path: Path) -> Tuple[str, int]:
         use_auth_token=HUGGINGFACE_API_KEY
     ).to(args.device)
 
-    benchmarkScore = computeRouge(benchmarkDf, model, tokenizer)
+    # benchmarkScore = computeRouge(benchmarkDf, model, tokenizer)
+    benchmarkScore = utils.computeRouge(list(benchmarkDf["response"]), makePreds(benchmarkDf, model, tokenizer))
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Initial benchmark test: {str(benchmarkScore[0])}", fg=typer.colors.BLUE)
 
-    def save_to_repo(args, model, tokenizer, message):
-        typer.secho(
-            f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Uploading model to: https://huggingface.co/{args.save_to}", fg=typer.colors.BLUE)
-        model.push_to_hub(
-            args.model_path, commit_message=f"model: {message}", use_auth_token=HUGGINGFACE_API_KEY)
-        # tokenizer.push_to_hub(
-        #     args.model_path, commit_message=f"tokenizer: {message}", use_auth_token=HUGGINGFACE_API_KEY)
-        typer.secho(f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Uploading finished, view it at: https://huggingface.co/{args.save_to}", fg=typer.colors.BLUE)
+    # def save_to_repo(args, model, tokenizer, message):
+    #     typer.secho(
+    #         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Uploading model to: https://huggingface.co/{args.save_to}", fg=typer.colors.BLUE)
+    #     model.push_to_hub(
+    #         args.model_path, commit_message=f"model: {message}", use_auth_token=HUGGINGFACE_API_KEY)
+    #     # tokenizer.push_to_hub(
+    #     #     args.model_path, commit_message=f"tokenizer: {message}", use_auth_token=HUGGINGFACE_API_KEY)
+    #     typer.secho(f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Uploading finished, view it at: https://huggingface.co/{args.save_to}", fg=typer.colors.BLUE)
 
     def load_and_cache_examples(args, tokenizer, df_trn, df_val, evaluate=False):
         return ConversationDataset(tokenizer, args, df_val if evaluate else df_trn)
@@ -522,11 +525,12 @@ def train(session_path: Path) -> Tuple[str, int]:
 
             # run benchmark assessment
             typer.secho(
-                f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Benchmark after iteration #{_+1}: {str(computeRouge(benchmarkDf, model, tokenizer)[0])}", fg=typer.colors.BLUE)
+                f"""\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Benchmark after iteration #{_+1}: {str(utils.computeRouge(list(benchmarkDf["response"]), makePreds(benchmarkDf, model, tokenizer)))}""", fg=typer.colors.BLUE)
             # save
             # pdb.set_trace()
             if saveToHub:
-                save_to_repo(args, model, tokenizer, f"Epoch #{_+1}")
+                utils.save_to_repo(args, model, f"Epoch #{_+1}", HUGGINGFACE_API_KEY)
+                # save_to_repo(args, model, tokenizer, f"Epoch #{_+1}")
             # pdb.set_trace()
         if args.local_rank in [-1, 0]:
             tb_writer.close()
@@ -640,7 +644,7 @@ def train(session_path: Path) -> Tuple[str, int]:
         set_seed(args)
 
         config = AutoConfig.from_pretrained(
-            args.config_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
+            LARGE_LANGUAGE_MODEL, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
         tokenizer = AutoTokenizer.from_pretrained(
             args.tokenizer_name, cache_dir=args.cache_dir, use_auth_token=HUGGINGFACE_API_KEY)
         model = AutoModelWithLMHead.from_pretrained(

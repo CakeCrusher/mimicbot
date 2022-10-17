@@ -14,6 +14,8 @@ from mimicbot_cli import (
     types,
 )
 
+from mimicbot_cli.train.train_torch import train as train_torch
+from mimicbot_cli.train.train_hf import train as train_hf
 from mimicbot_cli.bot.mine import data_mine
 from mimicbot_cli.bot.mimic import start_mimic
 import mimicbot_cli.mimicbot_chat.utils as chat_utils
@@ -114,12 +116,20 @@ def init_custom(
         "-od",
         help="Directory to output standardized files.",
     ),
+    large_language_model: str = typer.Option(
+        utils.current_config(
+            "huggingface", "large_language_model", "microsoft/DialoGPT-small"),
+        "--large_language_model",
+        "-llm",
+        help="What large language model to fine-tune on. Options: \"microsoft/DialoGPT-small\", \"bigscience/bloom-560m\""
+    ),
     forge_pipeline: bool = typer.Option(
         False,
         "--forge-pipeline",
         "-fp",
         help="Is running forge command.",
     ),
+
 ) -> None:
     """Initialize and set the config variables for using mimicbot independently of any platform. Requires message data."""
 
@@ -134,7 +144,7 @@ def init_custom(
         target_user
     )
     config.huggingface_config(
-        app_path, huggingface_api_key, huggingface_model_name, utils.current_config("huggingface", "model_saves", "[]"))
+        app_path, huggingface_api_key, huggingface_model_name, utils.current_config("huggingface", "model_saves", "[]"), large_language_model)
 
     utils.session_path(utils.callback_config()).mkdir(
         parents=True, exist_ok=True)
@@ -265,6 +275,13 @@ def init_discord(
         prompt="\nName of your model(AI system which will produce text that mimics the user) to be uploaded and fine-tuned in Huggingface.\nName of the model",
         help="Name of your model(AI system which will produce text that mimics the user) to be uploaded and fine-tuned in Huggingface.",
     ),
+    large_language_model: str = typer.Option(
+        utils.current_config(
+            "huggingface", "large_language_model", "microsoft/DialoGPT-small"),
+        "--large_language_model",
+        "-llm",
+        help="What large language model to fine-tune on. Options: \"microsoft/DialoGPT-small\", \"bigscience/bloom-560m\""
+    ),
     forge_pipeline: bool = typer.Option(
         False,
         "--forge-pipeline",
@@ -281,7 +298,7 @@ def init_discord(
     config.discord_config(app_path, discord_api_key,
                           discord_guild, discord_target_user)
     config.huggingface_config(
-        app_path, huggingface_api_key, huggingface_model_name, utils.current_config("huggingface", "model_saves", "[]"))
+        app_path, huggingface_api_key, huggingface_model_name, utils.current_config("huggingface", "model_saves", "[]"), large_language_model)
 
     utils.session_path(utils.callback_config()).mkdir(
         parents=True, exist_ok=True)
@@ -476,8 +493,8 @@ def train_model(
     """Trains the model to immitate the user identified in the config."""
 
     app_path = Path(app_path)
+    config_parser = utils.callback_config()
     while not session_path or not Path(session_path).exists():
-        config_parser = utils.callback_config()
         session_path = utils.session_path(config_parser)
         if not forge_pipeline:
             session_path = typer.prompt(
@@ -488,8 +505,13 @@ def train_model(
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Training model. This may take a while.", fg=typer.colors.YELLOW
     )
+    large_language_model = config_parser.get(
+        "huggingface", "large_language_model")
 
-    res, error = train.train(session_path)
+    if large_language_model == "microsoft/DialoGPT-small":
+        res, error = train_torch(session_path)
+    else:
+        res, error = train_hf(session_path)
 
     if error:
         # create a switch statement
@@ -510,9 +532,10 @@ def train_model(
             HUGGINGFACE_API_KEY = utils.current_config(
                 "huggingface", "api_key")
             MODEL_NAME = utils.current_config("huggingface", "model_name")
+            LARGE_LANGUAGE_MODEL = utils.current_config("huggingface", "large_language_model")
             with open(str(colab_path / ".env"), "w") as f:
                 f.write(
-                    f"HUGGINGFACE_API_KEY={HUGGINGFACE_API_KEY}\nMODEL_NAME={MODEL_NAME}")
+                    f"HUGGINGFACE_API_KEY={HUGGINGFACE_API_KEY}\nMODEL_NAME={MODEL_NAME}\nLARGE_LANGUAGE_MODEL={LARGE_LANGUAGE_MODEL}")
 
             # copy training files and paste into /colab/
             DATA_PATH = utils.current_config("general", "data_path")
@@ -552,14 +575,13 @@ def train_model(
                 raise typer.Exit(1)
         else:
             raise typer.Exit(1)
-    config_parser = utils.callback_config()
-    context_length = int(config_parser.get("training", "context_length"))
-    model_save = {
-        "url": res,
-        "context_length": context_length,
-        "data_path": str(session_path),
-    }
-    utils.add_model_save(app_path, model_save)
+    # context_length = int(config_parser.get("training", "context_length"))
+    # model_save = {
+    #     "url": res,
+    #     "context_length": context_length,
+    #     "data_path": str(session_path),
+    # }
+    # utils.add_model_save(app_path, model_save)
 
     typer.secho(
         f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully trained and saved the model. You can find it here [{str(res)}]",

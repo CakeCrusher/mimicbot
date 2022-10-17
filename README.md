@@ -7,13 +7,17 @@ Mimicbot enables the effortless yet modular creation of an AI chat bot model tha
 It offers a a general pipeline for creating a mimicbot from scratch provided data on the user to mimic, and another pipeline that runs entirely on Discord without the need for external data. The pipeline consists multiple other commands that are also available for modular use.
 
 ## New
+
 You can now create a mimicbot independent of the discord platform.
 
 ## Important Commands
+
 Type `python -m mimicbot_cli --help` to see a list of commands. Similarly you can use `python -m mimicbot_cli <A_MIMICBOT_COMMAND> --help` to see details on a specific command.
- 
+
 ## Quickstart
+
 ### Verify the following prerequisites are met
+
 - Python 3.x (verify with `python --version` or `python3 --version` or `py --version`)
   - Download from the official [Python website](https://www.python.org/downloads/)
 - git-lfs (verify with `git lfs --version`)
@@ -22,8 +26,10 @@ Type `python -m mimicbot_cli --help` to see a list of commands. Similarly you ca
   - Install with `py get-pip.py` or follow the official [pip installation guide](https://pip.pypa.io/en/stable/installation/).
 
 ### Note
+
 If you run into any issues, you dont know how to deal with. Utilize the mimicbot [Dockerfile](https://github.com/CakeCrusher/mimicbot/blob/master/Dockerfile) to [spin up a functional environment](https://github.com/CakeCrusher/mimicbot#spining-up-docker-environement).
 ### Steps
+<<<<<<< HEAD
 1. Run `pip install mimicbot-cli`.
 2. Run the command `python -m mimicbot_cli forge`. This command will guide you through the creation of the bot from start to finish.
 3. Opt to build a Discord bot.
@@ -31,22 +37,26 @@ If you run into any issues, you dont know how to deal with. Utilize the mimicbot
 
 
 ### Contribute
+=======
+
+>>>>>>> 7c93485798697b0ee60380309b9e5bcb25e0d6a2
 1. Clone the repository `git clone https://github.com/CakeCrusher/mimicbot.git`
 2. Navigate into the cloned directory `cd mimicbot`
-3. Install the dependencies `pip install -r requirements.txt`. If you have [CUDA](https://developer.nvidia.com/cuda-downloads) installed use  `pip install -r requirements-gpu.txt` instead. (WARNING: the dependencies will consume a lot of space. If you have an environment with pytorch already installed it is advisable that you use that environment.)
+3. Install the dependencies `pip install -r requirements.txt`. If you have [CUDA](https://developer.nvidia.com/cuda-downloads) installed use `pip install -r requirements-gpu.txt` instead. (WARNING: the dependencies will consume a lot of space. If you have an environment with pytorch already installed it is advisable that you use that environment.)
 4. Run the command `python -m mimicbot_cli forge`. This command will guide you through the creation of the bot from start to finish.
 5. Once the mimicbot is activated on discord, you can interact with it by simply sending it a message as you would to the person it is imitating, with a `@<NAME_OF_MIMICBOT>` mention somewhere in the text. The mimicbot will then reply with a message similar to how the original user would have said it.
- 
- 
+
 ## Deploy
+
 Although technically you could deploy your bot to any server using this repository it is not recommended primarily because of the heavy dependencies. Consequently, the [mimicbot-deploy](https://github.com/CakeCrusher/mimicbot-deploy) repository was built for ease of deployment.
 Follow the steps listed in its README to deploy your bot.
- 
+
 If you are still interested in deploying with this repository you can do so by either running `forge` on the server or passing the configuration files and data files to the appropriate paths on the server and then running `activate`.
 
+## Todo
 
-## Todo 
 (Feel free to contribute)
+
 - [x] Incorporate github actions to run the pytest tests.
 - [x] Enable bots to mention users in the channel.
 - [ ] More error handling.
@@ -64,13 +74,15 @@ If you are still interested in deploying with this repository you can do so by e
   - [ ] `activate` command unit tests
   - [ ] `train` command unit tests
   - [ ] End to end tests
- 
- 
+
 ## Mini-guides
+
 Quick guides to clear up the more confusing parts to getting up and running with mimicbot.
 
 ### Setting up Discord bot (and retrieving API token)
+
 If you are running `mimicbot_cli forge` on the CLI make sure to complete this guide before submitting the API key.
+
 1. Create a discord developer account and log in.
 2. Create a discord application in [applications page of the developer portal](https://discord.com/developers/applications). ![applications page](https://user-images.githubusercontent.com/37946988/180846074-d9f31aa1-2ab4-4389-9b67-95e117731052.png)
 3. Add a bot to the application in the bot settings inside your application. ![add bot](https://user-images.githubusercontent.com/37946988/180847396-a88123ae-337d-4716-bf46-d0ba8bc8264b.png)
@@ -81,7 +93,9 @@ If you are running `mimicbot_cli forge` on the CLI make sure to complete this gu
 8. If you are running `mimicbot_cli forge` make sure to return to the CLI, enter your Discord API token and continue on the CLI.
 
 ### Retrieving Huggingface API token
+
 If you are running `mimicbot_cli forge` on the CLI make sure to complete this guide before moving submitting the API key.
+
 1. Create a huggingface account and log in.
 2. Navigate to [your settings](https://huggingface.co/settings/profile).
 3. Click on the "Access Tokens" tab, then create a "New Token". Then label it, select its "Role" as "write", and press "Generate a token". ![image](https://user-images.githubusercontent.com/37946988/181860877-a2d3f87f-e886-42d4-a4df-4f54eb75707c.png)
@@ -89,19 +103,26 @@ If you are running `mimicbot_cli forge` on the CLI make sure to complete this gu
 5. If you are running `mimicbot_cli forge` make sure to return to the CLI, enter your Huggingface API token and continue on the CLI.
 
 ### Spining up Docker Environement
+
 1. Verify you have docker installed and running by using `docker ps`. You may install it from their [official installation page](https://docs.docker.com/get-docker/).
 2. Create a new docker image by running `docker build -t mimicbot .`.
 3. Run the docker image with `docker run -it --name <ANY_NAME> mimicbot /bin/bash`.
 4. You are now ready to start using mimicbot's CLI.
 5. You may return to the same container by running `docker start -ai <ANY_NAME>`
 
- 
 ## Troubleshooting
+
 Errors may occur here are common ones with solutions.
 
 ### GPU error
+<<<<<<< HEAD
 1. Visit [this colab notebook](https://colab.research.google.com/drive/1a196Ev2FJ8U_L__BjTTLFqCXrq9YFhc7?usp=sharing).
 2. Copy all files in your `/DATA_PATH/colab` into the root directory of the notebook. (If you don't know what your `DATA_PATH` is, enter the following command in a terminal: `python -m mimicbot_cli config`. Then find the line that with the text `data_path = ...` your `DATA_PATH` is listed there.) ![image](https://user-images.githubusercontent.com/37946988/180862412-5eaf0f84-d5e7-4498-9b58-f1ebaa424eb1.png)
+=======
+
+1. Visit [this colab notebook](https://colab.research.google.com/drive/1a196Ev2FJ8U_L__BjTTLFqCXrq9YFhc7?usp=sharing) or, if you set your large language model to `bigscience/bloom-560m`, visit [this colab notebook](https://colab.research.google.com/drive/1DiRwFPgm272Q-jekaOW4lUoagdZHRVR5?usp=sharing).
+2. Copy all file in your `/DATA_PATH/colab` into the root directory of the notebook. (If you don't know what your `DATA_PATH` is, enter the following command in a terminal: `python -m mimicbot_cli config`. Then find the line that with the text `data_path = ...` your `DATA_PATH` is listed there.) ![image](https://user-images.githubusercontent.com/37946988/180862412-5eaf0f84-d5e7-4498-9b58-f1ebaa424eb1.png)
+>>>>>>> 7c93485798697b0ee60380309b9e5bcb25e0d6a2
 3. Click on the "Edit" tab and then click on the "Notebook settings". Select "GPU" for Hardware accelerator, and finally click "Save". ![image](https://user-images.githubusercontent.com/37946988/180859764-a1e0291a-e81a-4241-8793-1568f4813a1e.png) ![image](https://user-images.githubusercontent.com/37946988/180860154-2e18ee5e-011a-41b6-9bdd-b1b024480622.png)
 4. Click on the "Runtime" tab, then click "Run all". ![image](https://user-images.githubusercontent.com/37946988/180862707-4a3b7f59-99da-4ffa-a76d-7f9c8563cf05.png)
 5. Wait for the script to finish. You will know it is done with the following indicators: 1. The favicon is yellow, 2. There is a green checkmark next to the cell, and 3. Scroll all the way down to the bottom of the output and you should see a timestamped message saying "Training finished". ![image](https://user-images.githubusercontent.com/37946988/180861730-36662d07-51f7-40ad-86f3-f257ad2cd07b.png)
