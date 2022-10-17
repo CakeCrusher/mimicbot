@@ -15,9 +15,9 @@ from transformers import (
 from datasets import DatasetDict, Dataset, load_metric
 import numpy as np
 
-config_parser = utils.callback_config()
 
 def train(session_path: Path) -> Tuple[str, int]:
+    config_parser = utils.callback_config()
     model_name = config_parser.get(
         "huggingface", "model_name")
     LARGE_LANGUAGE_MODEL = config_parser.get("huggingface", "large_language_model")
