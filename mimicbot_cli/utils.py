@@ -13,6 +13,7 @@ import typer
 from mimicbot_cli import config, __app_name__, types, SUCCESS, API_KEY_ERROR, CHANGE_VALUE
 import json
 import pandas as pd
+import shutil
 
 APP_DIR_PATH = Path(typer.get_app_dir(__app_name__))
 
@@ -292,3 +293,39 @@ def save_to_repo(args, model, message, HUGGINGFACE_API_KEY):
     model.push_to_hub(
         args.model_path, commit_message=f"model: {message}", use_auth_token=HUGGINGFACE_API_KEY)
     typer.secho(f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Uploading finished, view it at: https://huggingface.co/{args.save_to}", fg=typer.colors.BLUE)
+
+
+def generate_colab(app_path: str) -> Path:
+    app_path = Path(app_path)
+    config_parser = callback_config()
+    colab_path = Path(session_path(config_parser)) / "colab"
+    colab_path.mkdir(exist_ok=True)
+
+    # write .env in /DATA_PATH/colab/
+    HUGGINGFACE_API_KEY = current_config(
+        "huggingface", "api_key")
+    MODEL_NAME = current_config("huggingface", "model_name")
+    LARGE_LANGUAGE_MODEL = current_config(
+        "huggingface", "large_language_model")
+    with open(str(colab_path / ".env"), "w") as f:
+        f.write(
+            f"HUGGINGFACE_API_KEY={HUGGINGFACE_API_KEY}\nMODEL_NAME={MODEL_NAME}\nLARGE_LANGUAGE_MODEL={LARGE_LANGUAGE_MODEL}")
+
+    # copy training files and paste into /colab/
+    DATA_PATH = current_config("general", "data_path")
+    GUILD = current_config("discord", "guild")
+    SESSION = current_config("general", "session")
+    path_to_training_data = Path(
+        DATA_PATH) / GUILD / SESSION / "training_data"
+    print(path_to_training_data)
+    print(colab_path)
+    shutil.copytree(str(path_to_training_data),
+                    str(colab_path), dirs_exist_ok=True)
+
+    # copy huggingface\README.md into /colab/
+    # get current directory
+    path_to_readme = Path(__file__).parent / \
+        "huggingface" / "README.md"
+    shutil.copy(str(path_to_readme), str(colab_path))
+
+    return colab_path

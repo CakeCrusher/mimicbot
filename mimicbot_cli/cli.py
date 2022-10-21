@@ -469,6 +469,29 @@ def preprocess_data(
     )
 
 
+@app.command(name="gen_colab")
+def generate_colab(
+    app_path: str = typer.Option(
+        str(config.APP_DIR_PATH),
+        "--app-path",
+        "-ap",
+        help="Path to mimicbot config."
+    ),
+    session_path: str = typer.Option(
+        None,
+        "--session-path",
+        "-sp",
+        help="Path to session data."
+    ),
+):
+    """Generates colab utilities."""
+    path_of_utils = utils.generate_colab(app_path)
+    typer.secho(
+        f"\n({datetime.datetime.now().hour}:{datetime.datetime.now().minute}) Successfully generated colab utilities at: {str(path_of_utils)} .",
+        fg=typer.colors.GREEN
+    )
+
+
 @app.command(name="train")
 def train_model(
     app_path: str = typer.Option(
@@ -532,7 +555,8 @@ def train_model(
             HUGGINGFACE_API_KEY = utils.current_config(
                 "huggingface", "api_key")
             MODEL_NAME = utils.current_config("huggingface", "model_name")
-            LARGE_LANGUAGE_MODEL = utils.current_config("huggingface", "large_language_model")
+            LARGE_LANGUAGE_MODEL = utils.current_config(
+                "huggingface", "large_language_model")
             with open(str(colab_path / ".env"), "w") as f:
                 f.write(
                     f"HUGGINGFACE_API_KEY={HUGGINGFACE_API_KEY}\nMODEL_NAME={MODEL_NAME}\nLARGE_LANGUAGE_MODEL={LARGE_LANGUAGE_MODEL}")
